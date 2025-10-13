@@ -779,11 +779,11 @@ export default function Home() {
                   transition: 'all 0.3s ease',
                   border: '2px solid transparent',
                   fontSize: 'var(--text-lg)',
-                  background: 'linear-gradient(135deg, #D4AF37, #FFD700)',
+                  background: 'linear-gradient(135deg, #ffffff, #e0e0e0)',
                   color: '#000',
                   boxShadow: hoveredButton === 'primary-action' 
-                    ? '0 15px 35px rgba(212, 175, 55, 0.6)' 
-                    : '0 8px 25px rgba(212, 175, 55, 0.4)',
+                    ? '0 15px 35px rgba(255, 255, 255, 0.2)' 
+                    : '0 8px 25px rgba(255, 255, 255, 0.15)',
                   transform: hoveredButton === 'primary-action' ? 'translateY(-4px) scale(1.05)' : 'translateY(0) scale(1)',
                 }}
               >
@@ -1314,7 +1314,7 @@ export default function Home() {
           bottom: 0;
           background-image: 
             radial-gradient(circle at 20% 30%, var(--color-accent) 0%, transparent 40%),
-            radial-gradient(circle at 80% 70%, var(--color-purple) 0%, transparent 35%),
+            radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.1) 0%, transparent 35%),
             radial-gradient(circle at 50% 20%, var(--color-accent-soft) 0%, transparent 30%);
           opacity: 0.08;
         }
@@ -1557,7 +1557,7 @@ export default function Home() {
           background: rgba(212, 175, 55, 0.15);
           border: 1px solid rgba(212, 175, 55, 0.3);
           border-radius: var(--radius-full);
-          color: #D4AF37;
+          color: #ffffff;
           font-size: var(--text-sm);
           font-weight: var(--font-weight-semibold);
           margin-bottom: var(--space-8);
@@ -1580,7 +1580,7 @@ export default function Home() {
         }
         
         .merged-title .highlight {
-          color: #D4AF37;
+          color: #ffffff;
           text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
           animation: shimmer 3s ease-in-out infinite;
         }
@@ -1648,7 +1648,7 @@ export default function Home() {
         
         .feature-card:hover {
           transform: translateY(-8px) scale(1.02);
-          border-color: rgba(212, 175, 55, 0.4);
+          border-color: rgba(255, 255, 255, 0.15);
           box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 20px rgba(212, 175, 55, 0.2);
         }
         
@@ -1726,11 +1726,11 @@ export default function Home() {
           justify-content: center;
           width: 48px;
           height: 48px;
-          background: linear-gradient(135deg, #D4AF37, #FFD700);
+          background: linear-gradient(135deg, #ffffff, #e0e0e0);
           border-radius: var(--radius-lg);
           color: #000;
           flex-shrink: 0;
-          box-shadow: 0 6px 16px rgba(212, 175, 55, 0.4);
+          box-shadow: 0 6px 16px rgba(255, 255, 255, 0.15);
           position: relative;
           z-index: 2;
         }
@@ -1801,15 +1801,15 @@ export default function Home() {
         }
         
         .btn-primary-action {
-          background: linear-gradient(135deg, #D4AF37, #FFD700);
+          background: linear-gradient(135deg, #ffffff, #e0e0e0);
           color: #000;
           border-color: transparent;
-          box-shadow: 0 8px 25px rgba(212, 175, 55, 0.4);
+          box-shadow: 0 8px 25px rgba(255, 255, 255, 0.15);
         }
         
         .btn-primary-action:hover {
           transform: translateY(-4px) scale(1.05);
-          box-shadow: 0 15px 35px rgba(212, 175, 55, 0.6);
+          box-shadow: 0 15px 35px rgba(255, 255, 255, 0.2);
         }
         
         .btn-secondary-action {
@@ -1827,14 +1827,14 @@ export default function Home() {
         
         .btn-tertiary-action {
           background: transparent;
-          color: #D4AF37;
+          color: #ffffff;
           border: 2px solid rgba(212, 175, 55, 0.8);
           backdrop-filter: blur(15px);
         }
         
         .btn-tertiary-action:hover {
           background: rgba(212, 175, 55, 0.2);
-          border-color: #D4AF37;
+          border-color: #ffffff;
           transform: translateY(-4px) scale(1.05);
         }
         
@@ -1851,7 +1851,7 @@ export default function Home() {
         
         .edit-icon {
           cursor: pointer;
-          color: #D4AF37;
+          color: #ffffff;
           transition: all 0.2s ease;
           padding: 4px;
           border-radius: 4px;
@@ -2070,7 +2070,7 @@ export default function Home() {
           bottom: 0;
           background-image: 
             radial-gradient(circle at 20% 20%, var(--color-accent) 0%, transparent 30%),
-            radial-gradient(circle at 80% 80%, var(--color-purple) 0%, transparent 35%),
+            radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 35%),
             radial-gradient(circle at 50% 50%, var(--color-accent-soft) 0%, transparent 25%);
           opacity: 0.06;
         }
@@ -2170,7 +2170,7 @@ export default function Home() {
 
         .story-records-btn:hover {
           transform: translateY(-2px);
-          box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+          box-shadow: 0 6px 20px rgba(255, 255, 255, 0.15);
           background: linear-gradient(135deg, #FFD700, var(--color-accent));
         }
 
@@ -2266,7 +2266,7 @@ export default function Home() {
         .team-member:hover {
           transform: translateY(-8px) scale(1.02);
           box-shadow: var(--shadow-luxury);
-          border-color: var(--color-purple);
+          border-color: rgba(255, 255, 255, 0.1);
         }
         
         .team-member:hover::before {
@@ -2502,8 +2502,8 @@ export default function Home() {
           bottom: 0;
           background-image: 
             radial-gradient(circle at 10% 20%, var(--color-accent) 0%, transparent 30%),
-            radial-gradient(circle at 90% 80%, var(--color-purple) 0%, transparent 35%),
-            radial-gradient(circle at 30% 70%, var(--color-purple-light) 0%, transparent 20%);
+            radial-gradient(circle at 90% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 35%),
+            radial-gradient(circle at 30% 70%, rgba(255, 255, 255, 0.05) 0%, transparent 20%);
           opacity: 0.04;
         }
         
@@ -2599,7 +2599,7 @@ export default function Home() {
         .ending-stat:hover {
           transform: translateY(-6px) scale(1.02);
           box-shadow: var(--shadow-luxury), var(--shadow-purple);
-          border-color: var(--color-purple);
+          border-color: rgba(255, 255, 255, 0.1);
         }
         
         .ending-stat:hover::before {
@@ -2697,7 +2697,7 @@ export default function Home() {
         
         .btn-ending-primary:hover {
           transform: translateY(-4px) scale(1.05);
-          box-shadow: 0 15px 35px rgba(212, 175, 55, 0.6);
+          box-shadow: 0 15px 35px rgba(255, 255, 255, 0.2);
         }
         
         /* Responsive Design for Ending Section */
@@ -2755,7 +2755,7 @@ export default function Home() {
           inset: 0;
           background-image:
             radial-gradient(circle at 15% 20%, var(--color-accent) 0%, transparent 28%),
-            radial-gradient(circle at 85% 80%, var(--color-purple) 0%, transparent 32%),
+            radial-gradient(circle at 85% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 32%),
             radial-gradient(circle at 50% 50%, var(--color-accent-soft) 0%, transparent 24%);
           opacity: 0.05;
         }
@@ -2864,7 +2864,7 @@ export default function Home() {
           left: 18px;
           bottom: 18px;
           padding: 10px 14px;
-          background: linear-gradient(135deg, #D4AF37, #FFD700);
+          background: linear-gradient(135deg, #ffffff, #e0e0e0);
           border-radius: var(--radius-lg);
           color: #000;
           font-weight: var(--font-weight-bold);
@@ -2899,16 +2899,16 @@ export default function Home() {
           align-items: center;
           justify-content: center;
           border-radius: var(--radius-lg);
-          border: 1px solid rgba(212, 175, 55, 0.6);
+          border: 1px solid rgba(255, 255, 255, 0.2);
           background: rgba(255, 255, 255, 0.06);
-          color: #D4AF37;
+          color: #ffffff;
           backdrop-filter: blur(10px);
           transition: all 0.3s ease;
         }
 
         .clients-btn:hover {
           background: rgba(212, 175, 55, 0.18);
-          border-color: #D4AF37;
+          border-color: #ffffff;
           transform: translateY(-2px);
         }
 
@@ -2963,7 +2963,7 @@ export default function Home() {
           inset: 0;
           background-image:
             radial-gradient(circle at 20% 30%, var(--color-accent) 0%, transparent 30%),
-            radial-gradient(circle at 80% 70%, var(--color-purple) 0%, transparent 35%),
+            radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.1) 0%, transparent 35%),
             radial-gradient(circle at 50% 20%, var(--color-accent-soft) 0%, transparent 25%);
           opacity: 0.06;
         }
@@ -3032,7 +3032,7 @@ export default function Home() {
         .company-logo-placeholder {
           width: 60px;
           height: 60px;
-          background: linear-gradient(135deg, #D4AF37, #FFD700);
+          background: linear-gradient(135deg, #ffffff, #e0e0e0);
           border-radius: var(--radius-lg);
           display: flex;
           align-items: center;
@@ -3041,7 +3041,7 @@ export default function Home() {
           font-weight: var(--font-weight-bold);
           color: #000;
           margin: 0 auto;
-          box-shadow: 0 6px 16px rgba(212, 175, 55, 0.4);
+          box-shadow: 0 6px 16px rgba(255, 255, 255, 0.15);
         }
 
         .company-name {
@@ -3056,7 +3056,7 @@ export default function Home() {
           height: 60px;
           border-radius: var(--radius-lg);
           object-fit: cover;
-          box-shadow: 0 6px 16px rgba(212, 175, 55, 0.4);
+          box-shadow: 0 6px 16px rgba(255, 255, 255, 0.15);
         }
 
         .companies-loading {
@@ -3195,7 +3195,7 @@ export default function Home() {
         .sidebar-logo-placeholder {
           width: 60px;
           height: 60px;
-          background: linear-gradient(135deg, #D4AF37, #FFD700);
+          background: linear-gradient(135deg, #ffffff, #e0e0e0);
           border-radius: var(--radius-lg);
           display: flex;
           align-items: center;
@@ -3203,7 +3203,7 @@ export default function Home() {
           font-size: var(--text-2xl);
           font-weight: var(--font-weight-bold);
           color: #000;
-          box-shadow: 0 6px 16px rgba(212, 175, 55, 0.4);
+          box-shadow: 0 6px 16px rgba(255, 255, 255, 0.15);
         }
 
         .sidebar-logo-image {
@@ -3211,7 +3211,7 @@ export default function Home() {
           height: 60px;
           border-radius: var(--radius-lg);
           object-fit: cover;
-          box-shadow: 0 6px 16px rgba(212, 175, 55, 0.4);
+          box-shadow: 0 6px 16px rgba(255, 255, 255, 0.15);
         }
 
         .sidebar-company-name {

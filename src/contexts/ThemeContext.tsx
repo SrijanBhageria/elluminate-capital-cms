@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-export type Theme = 'dark';
+export type Theme = 'black';
 
 interface ThemeContextType {
   theme: Theme;
@@ -23,19 +23,19 @@ interface ThemeProviderProps {
 }
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-  const [theme] = useState<Theme>('dark');
+  const [theme] = useState<Theme>('black');
   const [mounted, setMounted] = useState(false);
 
-  // Initialize dark theme
+  // Initialize black theme
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Apply dark theme to document
+  // Apply black theme to document
   useEffect(() => {
     if (mounted) {
       document.documentElement.setAttribute('data-theme', 'dark');
-      localStorage.setItem('theme', 'dark');
+      localStorage.setItem('theme', 'black');
     }
   }, [mounted]);
 

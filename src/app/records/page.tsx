@@ -863,7 +863,7 @@ export default function RecordsPage() {
                   alignItems: 'center',
                   gap: 'var(--space-2)',
                   padding: 'var(--space-4) var(--space-8)',
-                  background: 'linear-gradient(135deg, #D4AF37, #FFD700)',
+                  background: 'linear-gradient(135deg, #ffffff, #e0e0e0)',
                   color: '#000',
                   borderRadius: 'var(--radius-lg)',
                   fontWeight: 'var(--font-weight-semibold)',

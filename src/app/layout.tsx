@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Inter, Source_Serif_4, JetBrains_Mono } from 'next/font/google';
+import { Inter, Source_Serif_4, JetBrains_Mono, Playfair_Display } from 'next/font/google';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import SmoothScrollProvider from '@/components/SmoothScrollProvider';
 import Navbar from '@/components/Navbar';
@@ -22,6 +22,12 @@ const sourceSerif = Source_Serif_4({
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   variable: '--font-jetbrains-mono',
+  display: 'swap',
+});
+
+const playfairDisplay = Playfair_Display({
+  subsets: ['latin'],
+  variable: '--font-playfair-display',
   display: 'swap',
 });
 
@@ -54,11 +60,12 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet" />
       </head>
       <body
-        className={`${inter.variable} ${sourceSerif.variable} ${jetbrainsMono.variable}`}
+        className={`${inter.variable} ${sourceSerif.variable} ${jetbrainsMono.variable} ${playfairDisplay.variable}`}
         style={{
-          fontFamily: 'var(--font-family-primary)',
+          fontFamily: "'Playfair Display', var(--font-family-primary), serif",
         }}
       >
         <ThemeProvider>
