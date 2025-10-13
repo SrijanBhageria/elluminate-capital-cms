@@ -1,18 +1,22 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { TrendingUp, Users, Award, ArrowRight, BarChart3, Globe, DollarSign, Building2, Shield, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
+import { TrendingUp, Users, Award, ArrowRight, BarChart3, Globe, DollarSign, Building2, Shield, Target, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
 import Link from 'next/link';
-import { EditableText } from '../components/EditableText';
+import { EditableText, EditableTextRef } from '../components/EditableText';
 import { EditableNumbers } from '../components/EditableNumbers';
 import { cmsService, PageContentData } from '../services/cmsService';
 import { PageType } from '../constants/pageTypes';
+import { investmentCardService, IInvestmentCard, CreateInvestmentCardData } from '../services/investmentCardService';
 
 export default function Home() {
   const [isVisible, setIsVisible] = useState(false);
   const [stats, setStats] = useState({ clients: 0, deals: 0, years: 0, assets: 0 });
   const [hoveredButton, setHoveredButton] = useState<string | null>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
+  const btnText1Ref = useRef<EditableTextRef>(null);
+  const btnText2Ref = useRef<EditableTextRef>(null);
+  const btnTextEndingRef = useRef<EditableTextRef>(null);
   
   // CMS State
   const [cmsData, setCmsData] = useState<PageContentData | null>(null);
@@ -23,6 +27,13 @@ export default function Home() {
   const [partnersData, setPartnersData] = useState<PageContentData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const hasLoadedRef = useRef(false);
+  
+  // Companies sidebar state
+  const [selectedCompany, setSelectedCompany] = useState<IInvestmentCard | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [companiesData, setCompaniesData] = useState<IInvestmentCard[]>([]);
+  const [companiesLoading, setCompaniesLoading] = useState(false);
+  const [savingCompany, setSavingCompany] = useState(false);
   const clients: string[] = [
     'Aurum Partners',
     'Nexus Holdings',
@@ -107,6 +118,8 @@ export default function Home() {
         // Load VISION page content
         const visionResponse = await cmsService.getPageContent(PageType.VISION);
         if (visionResponse.success && visionResponse.data) {
+          console.log('Vision data loaded:', visionResponse.data);
+          console.log('Vision items count:', visionResponse.data.items?.length || 0);
           setVisionData(visionResponse.data);
         } else {
           console.error('Failed to load vision page content:', visionResponse.message);
@@ -151,6 +164,7 @@ export default function Home() {
     };
     
     loadPageContent();
+    loadInvestmentCards();
     
     // Animate statistics
     const animateStats = () => {
@@ -324,6 +338,244 @@ export default function Home() {
     }
   };
 
+  // Companies sidebar handlers
+  const openCompanySidebar = (company: any) => {
+    console.log('Opening company sidebar with data:', company);
+    console.log('Company sections:', company.sections);
+    setSelectedCompany(company);
+    setIsSidebarOpen(true);
+  };
+
+  const closeCompanySidebar = () => {
+    setIsSidebarOpen(false);
+    setSelectedCompany(null);
+  };
+
+  const updateCompanyData = async (updatedCompany: IInvestmentCard) => {
+    if (!selectedCompany) return;
+
+    try {
+      setSavingCompany(true);
+      
+      // Prepare data for API
+      const cardData: CreateInvestmentCardData = {
+        cardId: selectedCompany.cardId,
+        companyName: updatedCompany.companyName,
+        companyLogo: updatedCompany.companyLogo,
+        sections: updatedCompany.sections,
+      };
+
+      // Save to API
+      const savedCard = await investmentCardService.createOrUpdateInvestmentCard(cardData);
+      
+      // Update local state with saved data
+      setCompaniesData(prev => 
+        prev.map(company => 
+          company._id === selectedCompany._id ? savedCard : company
+        )
+      );
+      setSelectedCompany(savedCard);
+      
+      console.log('Company data saved successfully');
+    } catch (error) {
+      console.error('Error saving company data:', error);
+      // You might want to show a toast notification here
+    } finally {
+      setSavingCompany(false);
+    }
+  };
+
+  // Helper function to update specific field
+  const updateCompanyField = async (field: keyof IInvestmentCard, value: any) => {
+    if (!selectedCompany) return;
+
+    try {
+      setSavingCompany(true);
+      
+      // Prepare minimal payload with only the changed field
+      const cardData: CreateInvestmentCardData = {
+        cardId: selectedCompany.cardId,
+        [field]: value,
+      };
+
+      // Save to API
+      const savedCard = await investmentCardService.createOrUpdateInvestmentCard(cardData);
+      
+      // Update local state with saved data
+      setCompaniesData(prev => 
+        prev.map(company => 
+          company._id === selectedCompany._id ? savedCard : company
+        )
+      );
+      setSelectedCompany(savedCard);
+      
+      console.log(`Company ${field} saved successfully`);
+    } catch (error) {
+      console.error(`Error saving company ${field}:`, error);
+      // You might want to show a toast notification here
+    } finally {
+      setSavingCompany(false);
+    }
+  };
+
+  // Helper function to update sections
+  const updateCompanySections = async (updatedSections: any[]) => {
+    if (!selectedCompany) return;
+
+    try {
+      setSavingCompany(true);
+      
+      // Prepare minimal payload with only sections
+      const cardData: CreateInvestmentCardData = {
+        cardId: selectedCompany.cardId,
+        sections: updatedSections,
+      };
+
+      // Save to API
+      const savedCard = await investmentCardService.createOrUpdateInvestmentCard(cardData);
+      
+      // Update local state with saved data
+      setCompaniesData(prev => 
+        prev.map(company => 
+          company._id === selectedCompany._id ? savedCard : company
+        )
+      );
+      setSelectedCompany(savedCard);
+      
+      console.log('Company sections saved successfully');
+    } catch (error) {
+      console.error('Error saving company sections:', error);
+      // You might want to show a toast notification here
+    } finally {
+      setSavingCompany(false);
+    }
+  };
+
+  // Helper function to add a new section
+  const addNewSection = async () => {
+    if (!selectedCompany) return;
+
+    const newSection = {
+      sectionId: `temp-${Date.now()}`, // Temporary ID
+      title: 'New Section',
+      content: 'Add your content here',
+      order: (selectedCompany.sections?.length || 0) + 1
+    };
+
+    const updatedSections = [...(selectedCompany.sections || []), newSection];
+    await updateCompanySections(updatedSections);
+  };
+
+  // Helper function to remove a section
+  const removeSection = async (sectionId: string) => {
+    if (!selectedCompany) return;
+
+    const updatedSections = (selectedCompany.sections || []).filter(section => section.sectionId !== sectionId);
+    await updateCompanySections(updatedSections);
+  };
+
+  // Helper function to convert section to array mode
+  const convertToArrayMode = async (sectionId: string) => {
+    if (!selectedCompany) return;
+
+    const updatedSections = [...(selectedCompany.sections || [])];
+    const sectionIndex = updatedSections.findIndex(s => s.sectionId === sectionId);
+    
+    if (sectionIndex >= 0) {
+      const currentContent = updatedSections[sectionIndex].content;
+      const newContent = Array.isArray(currentContent) 
+        ? currentContent 
+        : [currentContent || 'New field'];
+      
+      updatedSections[sectionIndex] = {
+        ...updatedSections[sectionIndex],
+        content: newContent
+      };
+      
+      await updateCompanySections(updatedSections);
+    }
+  };
+
+  // Helper function to convert section to single mode
+  const convertToSingleMode = async (sectionId: string) => {
+    if (!selectedCompany) return;
+
+    const updatedSections = [...(selectedCompany.sections || [])];
+    const sectionIndex = updatedSections.findIndex(s => s.sectionId === sectionId);
+    
+    if (sectionIndex >= 0) {
+      const currentContent = updatedSections[sectionIndex].content;
+      const newContent = Array.isArray(currentContent) 
+        ? currentContent.join(', ') 
+        : currentContent;
+      
+      updatedSections[sectionIndex] = {
+        ...updatedSections[sectionIndex],
+        content: newContent
+      };
+      
+      await updateCompanySections(updatedSections);
+    }
+  };
+
+  // Helper function to add a new field to array section
+  const addFieldToSection = async (sectionId: string) => {
+    if (!selectedCompany) return;
+
+    const updatedSections = [...(selectedCompany.sections || [])];
+    const sectionIndex = updatedSections.findIndex(s => s.sectionId === sectionId);
+    
+    if (sectionIndex >= 0) {
+      const currentContent = updatedSections[sectionIndex].content;
+      const newContent = Array.isArray(currentContent) 
+        ? [...currentContent, 'New field']
+        : [currentContent || 'New field', 'New field'];
+      
+      updatedSections[sectionIndex] = {
+        ...updatedSections[sectionIndex],
+        content: newContent
+      };
+      
+      await updateCompanySections(updatedSections);
+    }
+  };
+
+  // Helper function to remove a field from array section
+  const removeFieldFromSection = async (sectionId: string, fieldIndex: number) => {
+    if (!selectedCompany) return;
+
+    const updatedSections = [...(selectedCompany.sections || [])];
+    const sectionIndex = updatedSections.findIndex(s => s.sectionId === sectionId);
+    
+    if (sectionIndex >= 0) {
+      const currentContent = updatedSections[sectionIndex].content;
+      if (Array.isArray(currentContent)) {
+        const newContent = currentContent.filter((_, index) => index !== fieldIndex);
+        updatedSections[sectionIndex] = {
+          ...updatedSections[sectionIndex],
+          content: newContent
+        };
+        
+        await updateCompanySections(updatedSections);
+      }
+    }
+  };
+
+  // Load investment cards data
+  const loadInvestmentCards = async () => {
+    try {
+      setCompaniesLoading(true);
+      const cards = await investmentCardService.getAllInvestmentCards();
+      setCompaniesData(cards);
+    } catch (error) {
+      console.error('Error loading investment cards:', error);
+      // Set empty array on error to prevent crashes
+      setCompaniesData([]);
+    } finally {
+      setCompaniesLoading(false);
+    }
+  };
+
   // Show loading state while CMS data is being fetched
   if (isLoading && !cmsData) {
     return (
@@ -448,93 +700,57 @@ export default function Home() {
           />
           
           <div className="merged-features">
-            <div className="feature-card">
-              <div className="feature-icon">
-                <BarChart3 size={20} />
-              </div>
-              <div className="feature-content">
-                <EditableText
-                  value={visionData?.items?.[0]?.title || 'Advanced Market Analysis'}
-                  onSave={(newTitle) => {
-                    const updatedItems = [...(visionData?.items || [])];
-                    updatedItems[0] = { ...updatedItems[0], title: newTitle, description: updatedItems[0]?.description || 'In-depth research and trend analysis with real-time market intelligence' };
-                    handleItemsSave(updatedItems);
-                  }}
-                  tag="h4"
-                  className="feature-title"
-                  placeholder="Feature title"
-                />
-                <EditableText
-                  value={visionData?.items?.[0]?.description || 'In-depth research and trend analysis with real-time market intelligence'}
-                  onSave={(newDescription) => {
-                    const updatedItems = [...(visionData?.items || [])];
-                    updatedItems[0] = { ...updatedItems[0], title: updatedItems[0]?.title || 'Advanced Market Analysis', description: newDescription };
-                    handleItemsSave(updatedItems);
-                  }}
-                  tag="p"
-                  className="feature-description"
-                  placeholder="Feature description"
-                />
-              </div>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon">
-                <Globe size={20} />
-              </div>
-              <div className="feature-content">
-                <EditableText
-                  value={visionData?.items?.[1]?.title || 'Global Market Coverage'}
-                  onSave={(newTitle) => {
-                    const updatedItems = [...(visionData?.items || [])];
-                    updatedItems[1] = { ...updatedItems[1], title: newTitle, description: updatedItems[1]?.description || 'Worldwide insights and opportunities across all major financial markets' };
-                    handleItemsSave(updatedItems);
-                  }}
-                  tag="h4"
-                  className="feature-title"
-                  placeholder="Feature title"
-                />
-                <EditableText
-                  value={visionData?.items?.[1]?.description || 'Worldwide insights and opportunities across all major financial markets'}
-                  onSave={(newDescription) => {
-                    const updatedItems = [...(visionData?.items || [])];
-                    updatedItems[1] = { ...updatedItems[1], title: updatedItems[1]?.title || 'Global Market Coverage', description: newDescription };
-                    handleItemsSave(updatedItems);
-                  }}
-                  tag="p"
-                  className="feature-description"
-                  placeholder="Feature description"
-                />
-              </div>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon">
-                <DollarSign size={20} />
-              </div>
-              <div className="feature-content">
-                <EditableText
-                  value={visionData?.items?.[2]?.title || 'Strategic Investment Solutions'}
-                  onSave={(newTitle) => {
-                    const updatedItems = [...(visionData?.items || [])];
-                    updatedItems[2] = { ...updatedItems[2], title: newTitle, description: updatedItems[2]?.description || 'Proven strategies for portfolio optimization and wealth maximization' };
-                    handleItemsSave(updatedItems);
-                  }}
-                  tag="h4"
-                  className="feature-title"
-                  placeholder="Feature title"
-                />
-                <EditableText
-                  value={visionData?.items?.[2]?.description || 'Proven strategies for portfolio optimization and wealth maximization'}
-                  onSave={(newDescription) => {
-                    const updatedItems = [...(visionData?.items || [])];
-                    updatedItems[2] = { ...updatedItems[2], title: updatedItems[2]?.title || 'Strategic Investment Solutions', description: newDescription };
-                    handleItemsSave(updatedItems);
-                  }}
-                  tag="p"
-                  className="feature-description"
-                  placeholder="Feature description"
-                />
-              </div>
-            </div>
+            {visionData?.items?.map((item, index) => {
+              // Array of icons to cycle through
+              const icons = [BarChart3, Globe, DollarSign, Building2, Shield, Target, Users, Award];
+              const IconComponent = icons[index % icons.length];
+              
+              console.log(`Rendering vision item ${index}:`, item);
+              
+              return (
+                <div key={index} className="feature-card">
+                  <button
+                    onClick={() => {
+                      const updatedItems = [...(visionData?.items || [])];
+                      updatedItems.splice(index, 1);
+                      handleItemsSave(updatedItems);
+                    }}
+                    className="feature-remove"
+                    title="Remove this item"
+                  >
+                    ×
+                  </button>
+                  <div className="feature-icon">
+                    <IconComponent size={20} />
+                  </div>
+                  <div className="feature-content">
+                    <EditableText
+                      value={item.title}
+                      onSave={(newTitle) => {
+                        const updatedItems = [...(visionData?.items || [])];
+                        updatedItems[index] = { ...updatedItems[index], title: newTitle, description: updatedItems[index]?.description || '' };
+                        handleItemsSave(updatedItems);
+                      }}
+                      tag="h4"
+                      className="feature-title"
+                      placeholder="Feature title"
+                    />
+                    <EditableText
+                      value={item.description}
+                      onSave={(newDescription) => {
+                        const updatedItems = [...(visionData?.items || [])];
+                        updatedItems[index] = { ...updatedItems[index], title: updatedItems[index]?.title || '', description: newDescription };
+                        handleItemsSave(updatedItems);
+                      }}
+                      tag="p"
+                      className="feature-description"
+                      placeholder="Feature description"
+                    />
+                  </div>
+                </div>
+              );
+            })}
+            
           </div>
           
           <div className="merged-actions">
@@ -544,8 +760,7 @@ export default function Home() {
                 className="edit-icon"
                 onClick={() => {
                   // Trigger edit for first button
-                  const event = new Event('dblclick');
-                  document.querySelector('.btn-text-1')?.dispatchEvent(event);
+                  btnText1Ref.current?.triggerEdit();
                 }}
               />
               <Link 
@@ -573,6 +788,7 @@ export default function Home() {
                 }}
               >
                 <EditableText
+                  ref={btnText1Ref}
                   value={visionData?.btnTxt?.[0]?.buttonText || 'Explore Market Insights'}
                   onSave={(newText) => {
                     const updatedBtnTxt = [...(visionData?.btnTxt || [{ buttonText: 'Explore Market Insights' }])];
@@ -582,55 +798,9 @@ export default function Home() {
                   tag="span"
                   className="btn-text btn-text-1"
                   placeholder="Button text"
+                  disableDoubleClick={true}
                 />
                 <ArrowRight size={22} />
-              </Link>
-            </div>
-            <div className="button-with-edit">
-              <Pencil 
-                size={16} 
-                className="edit-icon"
-                onClick={() => {
-                  // Trigger edit for second button
-                  const event = new Event('dblclick');
-                  document.querySelector('.btn-text-2')?.dispatchEvent(event);
-                }}
-              />
-              <Link 
-                href="/contact" 
-                className="btn-tertiary-action"
-                onMouseEnter={() => setHoveredButton('tertiary-action')}
-                onMouseLeave={() => setHoveredButton(null)}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 'var(--space-2)',
-                  padding: 'var(--space-5) var(--space-10)',
-                  borderRadius: 'var(--radius-lg)',
-                  fontWeight: 'var(--font-weight-semibold)',
-                  textDecoration: 'none',
-                  transition: 'all 0.3s ease',
-                  border: '2px solid rgba(212, 175, 55, 0.8)',
-                  fontSize: 'var(--text-lg)',
-                  background: hoveredButton === 'tertiary-action' 
-                    ? 'rgba(212, 175, 55, 0.2)' 
-                    : 'transparent',
-                  color: '#D4AF37',
-                  backdropFilter: 'blur(15px)',
-                  transform: hoveredButton === 'tertiary-action' ? 'translateY(-4px) scale(1.05)' : 'translateY(0) scale(1)',
-                }}
-              >
-                <EditableText
-                  value={visionData?.btnTxt?.[1]?.buttonText || 'Get Custom Analysis'}
-                  onSave={(newText) => {
-                    const updatedBtnTxt = [...(visionData?.btnTxt || [{ buttonText: 'Get Custom Analysis' }])];
-                    updatedBtnTxt[1] = { buttonText: newText };
-                    handleBtnTxtSave(updatedBtnTxt);
-                  }}
-                  tag="span"
-                  className="btn-text btn-text-2"
-                  placeholder="Button text"
-                />
               </Link>
             </div>
           </div>
@@ -666,6 +836,13 @@ export default function Home() {
                 multiline={true}
                 placeholder="Story description"
               />
+              
+              <div className="story-actions">
+                <Link href="/records" className="story-records-btn">
+                  <span className="btn-text">View Our Track Records</span>
+                  <ArrowRight className="btn-icon" />
+                </Link>
+              </div>
             </div>
             
           </div>
@@ -694,370 +871,355 @@ export default function Home() {
             </div>
             
             <div className="team-grid">
-              <div className="team-member">
-                <div className="member-image">
-                  <img 
-                    src="https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop&crop=face" 
-                    alt={leadershipData?.items?.[0]?.title || "Sarah Mitchell"}
-                  />
-                </div>
-                <div className="member-info">
-                  <EditableText
-                    value={leadershipData?.items?.[0]?.title || 'Sarah Mitchell'}
-                    onSave={(newName) => {
-                      const updatedItems = [...(leadershipData?.items || [])];
-                      updatedItems[0] = { 
-                        title: newName, 
-                        description: updatedItems[0]?.description || 'Chief Executive Officer' 
-                      };
-                      handleLeadershipItemsSave(updatedItems);
-                    }}
-                    tag="h3"
-                    className="member-name"
-                    placeholder="Member name"
-                  />
-                  <EditableText
-                    value={leadershipData?.items?.[0]?.description || 'Chief Executive Officer'}
-                    onSave={(newPosition) => {
-                      const updatedItems = [...(leadershipData?.items || [])];
-                      updatedItems[0] = { 
-                        title: updatedItems[0]?.title || 'Sarah Mitchell', 
-                        description: newPosition 
-                      };
-                      handleLeadershipItemsSave(updatedItems);
-                    }}
-                    tag="p"
-                    className="member-position"
-                    placeholder="Member position"
-                  />
-                </div>
-              </div>
+              {leadershipData?.items?.map((item, index) => {
+                const defaultImages = [
+                  "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop&crop=face",
+                  "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face",
+                  "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop&crop=face",
+                  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+                ];
+                return (
+                  <div key={index} className="team-member">
+                    <button
+                      onClick={() => {
+                        const updatedItems = [...(leadershipData?.items || [])];
+                        updatedItems.splice(index, 1);
+                        handleLeadershipItemsSave(updatedItems);
+                      }}
+                      className="team-member-remove"
+                      title="Remove this member"
+                    >
+                      ×
+                    </button>
+                    <div className="member-image">
+                      <img 
+                        src={defaultImages[index % defaultImages.length]} 
+                        alt={item.title}
+                      />
+                    </div>
+                    <div className="member-info">
+                      <EditableText
+                        value={item.title}
+                        onSave={(newName) => {
+                          const updatedItems = [...(leadershipData?.items || [])];
+                          updatedItems[index] = { 
+                            title: newName, 
+                            description: updatedItems[index]?.description || 'New Position' 
+                          };
+                          handleLeadershipItemsSave(updatedItems);
+                        }}
+                        tag="h3"
+                        className="member-name"
+                        placeholder="Member name"
+                      />
+                      <EditableText
+                        value={item.description}
+                        onSave={(newPosition) => {
+                          const updatedItems = [...(leadershipData?.items || [])];
+                          updatedItems[index] = { 
+                            title: updatedItems[index]?.title || 'New Member', 
+                            description: newPosition 
+                          };
+                          handleLeadershipItemsSave(updatedItems);
+                        }}
+                        tag="p"
+                        className="member-position"
+                        placeholder="Member position"
+                      />
+                    </div>
+                  </div>
+                );
+              })}
               
-              <div className="team-member">
-                <div className="member-image">
-                  <img 
-                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face" 
-                    alt={leadershipData?.items?.[1]?.title || "David Chen"}
-                  />
-                </div>
-                <div className="member-info">
-                  <EditableText
-                    value={leadershipData?.items?.[1]?.title || 'David Chen'}
-                    onSave={(newName) => {
-                      const updatedItems = [...(leadershipData?.items || [])];
-                      updatedItems[1] = { 
-                        title: newName, 
-                        description: updatedItems[1]?.description || 'Chief Investment Officer' 
-                      };
-                      handleLeadershipItemsSave(updatedItems);
-                    }}
-                    tag="h3"
-                    className="member-name"
-                    placeholder="Member name"
-                  />
-                  <EditableText
-                    value={leadershipData?.items?.[1]?.description || 'Chief Investment Officer'}
-                    onSave={(newPosition) => {
-                      const updatedItems = [...(leadershipData?.items || [])];
-                      updatedItems[1] = { 
-                        title: updatedItems[1]?.title || 'David Chen', 
-                        description: newPosition 
-                      };
-                      handleLeadershipItemsSave(updatedItems);
-                    }}
-                    tag="p"
-                    className="member-position"
-                    placeholder="Member position"
-                  />
-                </div>
-              </div>
-              
-              <div className="team-member">
-                <div className="member-image">
-                  <img 
-                    src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop&crop=face" 
-                    alt={leadershipData?.items?.[2]?.title || "Emily Rodriguez"}
-                  />
-                </div>
-                <div className="member-info">
-                  <EditableText
-                    value={leadershipData?.items?.[2]?.title || 'Emily Rodriguez'}
-                    onSave={(newName) => {
-                      const updatedItems = [...(leadershipData?.items || [])];
-                      updatedItems[2] = { 
-                        title: newName, 
-                        description: updatedItems[2]?.description || 'Head of Capital Markets' 
-                      };
-                      handleLeadershipItemsSave(updatedItems);
-                    }}
-                    tag="h3"
-                    className="member-name"
-                    placeholder="Member name"
-                  />
-                  <EditableText
-                    value={leadershipData?.items?.[2]?.description || 'Head of Capital Markets'}
-                    onSave={(newPosition) => {
-                      const updatedItems = [...(leadershipData?.items || [])];
-                      updatedItems[2] = { 
-                        title: updatedItems[2]?.title || 'Emily Rodriguez', 
-                        description: newPosition 
-                      };
-                      handleLeadershipItemsSave(updatedItems);
-                    }}
-                    tag="p"
-                    className="member-position"
-                    placeholder="Member position"
-                  />
-                </div>
-              </div>
-              
-              <div className="team-member">
-                <div className="member-image">
-                  <img 
-                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face" 
-                    alt={leadershipData?.items?.[3]?.title || "Michael Thompson"}
-                  />
-                </div>
-                <div className="member-info">
-                  <EditableText
-                    value={leadershipData?.items?.[3]?.title || 'Michael Thompson'}
-                    onSave={(newName) => {
-                      const updatedItems = [...(leadershipData?.items || [])];
-                      updatedItems[3] = { 
-                        title: newName, 
-                        description: updatedItems[3]?.description || 'Managing Director, M&A' 
-                      };
-                      handleLeadershipItemsSave(updatedItems);
-                    }}
-                    tag="h3"
-                    className="member-name"
-                    placeholder="Member name"
-                  />
-                  <EditableText
-                    value={leadershipData?.items?.[3]?.description || 'Managing Director, M&A'}
-                    onSave={(newPosition) => {
-                      const updatedItems = [...(leadershipData?.items || [])];
-                      updatedItems[3] = { 
-                        title: updatedItems[3]?.title || 'Michael Thompson', 
-                        description: newPosition 
-                      };
-                      handleLeadershipItemsSave(updatedItems);
-                    }}
-                    tag="p"
-                    className="member-position"
-                    placeholder="Member position"
-                  />
-                </div>
-              </div>
+              <button
+                onClick={() => {
+                  const updatedItems = [...(leadershipData?.items || []), { title: 'New Member', description: 'New Position' }];
+                  handleLeadershipItemsSave(updatedItems);
+                }}
+                className="team-member-add"
+                title="Add new team member"
+              >
+                <div className="team-member-add-icon">+</div>
+                <div className="team-member-add-text">Add Member</div>
+              </button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Ending Section */}
-      <section className="ending-section">
-        <div className="ending-background">
-          <div className="ending-gradient"></div>
-          <div className="ending-pattern"></div>
+      {/* Companies Section */}
+      <section className="companies-section">
+        <div className="companies-background">
+          <div className="companies-gradient"></div>
+          <div className="companies-pattern"></div>
         </div>
         
-        <div className="ending-content">
-          <div className="ending-main">
-            <h2 className="ending-title">
-              <EditableText
-                value={investmentStrategyData?.title || 'Ready to Transform Your Investment Strategy?'}
-                onSave={handleInvestmentStrategyTitleSave}
-                tag="span"
-                className="ending-title-text"
-                placeholder="Investment strategy title"
-              />
-            </h2>
-            
+        <div className="companies-content">
+          <h2 className="companies-title">
             <EditableText
-              value={investmentStrategyData?.subtitle || 'Join hundreds of successful investors who trust Elluminate Capital for their most critical financial decisions.\nLet our expertise guide you toward unprecedented growth and success.'}
-              onSave={handleInvestmentStrategyDescriptionSave}
-              tag="p"
-              className="ending-description"
-              multiline={true}
-              placeholder="Investment strategy description"
+              value="COMPANIES"
+              onSave={() => {}}
+              tag="span"
+              className="companies-title-text"
+              placeholder="Companies title"
             />
-            
-            <div className="ending-stats">
-              <div className="ending-stat">
-                <EditableText
-                  value={investmentStrategyData?.numbers?.[0]?.value || '15+'}
-                  onSave={(newValue) => {
-                    const updatedNumbers = [...(investmentStrategyData?.numbers || [])];
-                    updatedNumbers[0] = { 
-                      value: newValue, 
-                      label: updatedNumbers[0]?.label || 'Years of Excellence' 
-                    };
-                    handleInvestmentStrategyNumbersSave(updatedNumbers);
-                  }}
-                  tag="div"
-                  className="ending-stat-number"
-                  placeholder="Stat number"
-                />
-                <EditableText
-                  value={investmentStrategyData?.numbers?.[0]?.label || 'Years of Excellence'}
-                  onSave={(newLabel) => {
-                    const updatedNumbers = [...(investmentStrategyData?.numbers || [])];
-                    updatedNumbers[0] = { 
-                      value: updatedNumbers[0]?.value || '15+', 
-                      label: newLabel 
-                    };
-                    handleInvestmentStrategyNumbersSave(updatedNumbers);
-                  }}
-                  tag="div"
-                  className="ending-stat-label"
-                  placeholder="Stat label"
-                />
+          </h2>
+          
+          <div className="companies-grid">
+            {companiesLoading ? (
+              <div className="companies-loading">
+                <div className="loading-spinner"></div>
+                <p>Loading companies...</p>
               </div>
-              <div className="ending-stat">
-                <EditableText
-                  value={investmentStrategyData?.numbers?.[1]?.value || '500+'}
-                  onSave={(newValue) => {
-                    const updatedNumbers = [...(investmentStrategyData?.numbers || [])];
-                    updatedNumbers[1] = { 
-                      value: newValue, 
-                      label: updatedNumbers[1]?.label || 'Successful Clients' 
-                    };
-                    handleInvestmentStrategyNumbersSave(updatedNumbers);
-                  }}
-                  tag="div"
-                  className="ending-stat-number"
-                  placeholder="Stat number"
-                />
-                <EditableText
-                  value={investmentStrategyData?.numbers?.[1]?.label || 'Successful Clients'}
-                  onSave={(newLabel) => {
-                    const updatedNumbers = [...(investmentStrategyData?.numbers || [])];
-                    updatedNumbers[1] = { 
-                      value: updatedNumbers[1]?.value || '500+', 
-                      label: newLabel 
-                    };
-                    handleInvestmentStrategyNumbersSave(updatedNumbers);
-                  }}
-                  tag="div"
-                  className="ending-stat-label"
-                  placeholder="Stat label"
-                />
+            ) : companiesData.length > 0 ? (
+              companiesData.map((company, index) => (
+                <div key={company._id || index} className="company-card" onClick={() => openCompanySidebar(company)}>
+                  <div className="company-card-content">
+                    <div className="company-logo">
+                      {company.companyLogo ? (
+                        <img 
+                          src={company.companyLogo} 
+                          alt={`${company.companyName} logo`}
+                          className="company-logo-image"
+                        />
+                      ) : (
+                        <div className="company-logo-placeholder">
+                          {company.companyName?.charAt(0) || '?'}
+                        </div>
+                      )}
+                    </div>
+                    <div className="company-name">{company.companyName || 'Unnamed Company'}</div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="companies-empty">
+                <p>No companies found</p>
               </div>
-              <div className="ending-stat">
-                <EditableText
-                  value={investmentStrategyData?.numbers?.[2]?.value || '$50B+'}
-                  onSave={(newValue) => {
-                    const updatedNumbers = [...(investmentStrategyData?.numbers || [])];
-                    updatedNumbers[2] = { 
-                      value: newValue, 
-                      label: updatedNumbers[2]?.label || 'Assets Managed' 
-                    };
-                    handleInvestmentStrategyNumbersSave(updatedNumbers);
-                  }}
-                  tag="div"
-                  className="ending-stat-number"
-                  placeholder="Stat number"
-                />
-                <EditableText
-                  value={investmentStrategyData?.numbers?.[2]?.label || 'Assets Managed'}
-                  onSave={(newLabel) => {
-                    const updatedNumbers = [...(investmentStrategyData?.numbers || [])];
-                    updatedNumbers[2] = { 
-                      value: updatedNumbers[2]?.value || '$50B+', 
-                      label: newLabel 
-                    };
-                    handleInvestmentStrategyNumbersSave(updatedNumbers);
-                  }}
-                  tag="div"
-                  className="ending-stat-label"
-                  placeholder="Stat label"
-                />
-              </div>
-              <div className="ending-stat">
-                <EditableText
-                  value={investmentStrategyData?.numbers?.[3]?.value || '98%'}
-                  onSave={(newValue) => {
-                    const updatedNumbers = [...(investmentStrategyData?.numbers || [])];
-                    updatedNumbers[3] = { 
-                      value: newValue, 
-                      label: updatedNumbers[3]?.label || 'Client Satisfaction' 
-                    };
-                    handleInvestmentStrategyNumbersSave(updatedNumbers);
-                  }}
-                  tag="div"
-                  className="ending-stat-number"
-                  placeholder="Stat number"
-                />
-                <EditableText
-                  value={investmentStrategyData?.numbers?.[3]?.label || 'Client Satisfaction'}
-                  onSave={(newLabel) => {
-                    const updatedNumbers = [...(investmentStrategyData?.numbers || [])];
-                    updatedNumbers[3] = { 
-                      value: updatedNumbers[3]?.value || '98%', 
-                      label: newLabel 
-                    };
-                    handleInvestmentStrategyNumbersSave(updatedNumbers);
-                  }}
-                  tag="div"
-                  className="ending-stat-label"
-                  placeholder="Stat label"
-                />
-              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Companies Sidebar */}
+      {isSidebarOpen && selectedCompany && (
+        <div className="sidebar-overlay" onClick={closeCompanySidebar}>
+          <div className="companies-sidebar" onClick={(e) => e.stopPropagation()}>
+            <div className="sidebar-header">
+              <h3 className="sidebar-title">
+                Company Details
+                {savingCompany && <span className="saving-indicator">Saving...</span>}
+              </h3>
+              <button className="sidebar-close" onClick={closeCompanySidebar}>
+                ×
+              </button>
             </div>
             
-            <div className="ending-actions">
-              <div className="button-with-edit">
-                <Pencil 
-                  size={18} 
-                  className="edit-icon"
-                  onClick={() => {
-                    // Trigger edit for ending button
-                    const event = new Event('dblclick');
-                    document.querySelector('.btn-text-ending')?.dispatchEvent(event);
-                  }}
-                />
-                <Link 
-                  href="/records" 
-                  className="btn-ending-primary"
-                  onMouseEnter={() => setHoveredButton('ending-primary')}
-                  onMouseLeave={() => setHoveredButton(null)}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 'var(--space-2)',
-                    padding: 'var(--space-5) var(--space-10)',
-                    borderRadius: 'var(--radius-lg)',
-                    fontWeight: 'var(--font-weight-bold)',
-                    textDecoration: 'none',
-                    transition: 'all 0.3s ease',
-                    border: '2px solid transparent',
-                    fontSize: 'var(--text-xl)',
-                    background: 'linear-gradient(135deg, #D4AF37, #FFD700)',
-                    color: '#000',
-                    boxShadow: hoveredButton === 'ending-primary' 
-                      ? '0 15px 35px rgba(212, 175, 55, 0.6)' 
-                      : '0 8px 25px rgba(212, 175, 55, 0.4)',
-                    transform: hoveredButton === 'ending-primary' ? 'translateY(-4px) scale(1.05)' : 'translateY(0) scale(1)',
-                  }}
-                >
+            <div className="sidebar-content">
+              <div className="sidebar-company-header">
+                <div className="sidebar-company-logo">
+                  {selectedCompany.companyLogo ? (
+                    <img 
+                      src={selectedCompany.companyLogo} 
+                      alt={`${selectedCompany.companyName} logo`}
+                      className="sidebar-logo-image"
+                    />
+                  ) : (
+                    <div className="sidebar-logo-placeholder">
+                      {selectedCompany.companyName?.charAt(0) || '?'}
+                    </div>
+                  )}
+                </div>
+                <div className="sidebar-company-info">
                   <EditableText
-                    value={investmentStrategyData?.btnTxt?.[0]?.buttonText || "View Our Track Record"}
-                    onSave={(newText) => {
-                      const updatedBtnTxt = [...(investmentStrategyData?.btnTxt || [{ buttonText: 'View Our Track Record' }])];
-                      updatedBtnTxt[0] = { buttonText: newText };
-                      handleInvestmentStrategyBtnTxtSave(updatedBtnTxt);
-                    }}
-                    tag="span"
-                    className="btn-text btn-text-ending"
-                    placeholder="Button text"
+                    value={selectedCompany.companyName || ''}
+                    onSave={(newName) => updateCompanyField('companyName', newName)}
+                    tag="h2"
+                    className="sidebar-company-name"
+                    placeholder="Company name"
                   />
-                  <ArrowRight size={24} />
-                </Link>
+                </div>
+              </div>
+              
+              {/* Dynamic sections from API */}
+              {selectedCompany.sections && selectedCompany.sections.length > 0 ? (
+                selectedCompany.sections
+                  .sort((a, b) => (a.order || 0) - (b.order || 0))
+                  .map((section, index) => (
+                    <div key={section.sectionId || index} className="sidebar-section">
+                      <div className="sidebar-section-header">
+                        <div className="sidebar-label">
+                          <EditableText
+                            value={section.title || 'Section'}
+                            onSave={(newTitle) => {
+                              const updatedSections = [...(selectedCompany.sections || [])];
+                              const sectionIndex = updatedSections.findIndex(s => s.sectionId === section.sectionId);
+                              if (sectionIndex >= 0) {
+                                updatedSections[sectionIndex] = {
+                                  ...updatedSections[sectionIndex],
+                                  title: newTitle
+                                };
+                                updateCompanySections(updatedSections);
+                              }
+                            }}
+                            tag="span"
+                            className="sidebar-label-text"
+                            placeholder="Section title"
+                          />
+                        </div>
+                        <button
+                          className="section-remove-btn"
+                          onClick={() => removeSection(section.sectionId || '')}
+                          title="Remove section"
+                        >
+                          ×
+                        </button>
+                      </div>
+                      
+                      {Array.isArray(section.content) && section.content.length > 0 ? (
+                        <div className="sidebar-array-content">
+                          {section.content.map((item: any, idx: number) => (
+                            <div key={idx} className="sidebar-field-item">
+                              <EditableText
+                                value={typeof item === 'string' ? item : JSON.stringify(item)}
+                                onSave={(newValue) => {
+                                  const updatedSections = [...(selectedCompany.sections || [])];
+                                  const sectionIndex = updatedSections.findIndex(s => s.sectionId === section.sectionId);
+                                  if (sectionIndex >= 0) {
+                                    const updatedContent = [...(updatedSections[sectionIndex].content as any[])];
+                                    updatedContent[idx] = newValue;
+                                    updatedSections[sectionIndex] = {
+                                      ...updatedSections[sectionIndex],
+                                      content: updatedContent
+                                    };
+                                    updateCompanySections(updatedSections);
+                                  }
+                                }}
+                                tag="div"
+                                className="sidebar-array-item"
+                                placeholder="Field content"
+                              />
+                              <button
+                                className="field-remove-btn"
+                                onClick={() => removeFieldFromSection(section.sectionId || '', idx)}
+                                title="Remove field"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                          <div className="sidebar-field-actions">
+                            <button
+                              className="add-field-btn"
+                              onClick={() => addFieldToSection(section.sectionId || '')}
+                              title="Add new field"
+                            >
+                              + Add Field
+                            </button>
+                            <button
+                              className="convert-to-single-btn"
+                              onClick={() => convertToSingleMode(section.sectionId || '')}
+                              title="Convert to single field"
+                            >
+                              → Single Field
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="sidebar-single-content">
+                          <EditableText
+                            value={section.content ? (typeof section.content === 'string' ? section.content : JSON.stringify(section.content)) : ''}
+                            onSave={(newContent) => {
+                              const updatedSections = [...(selectedCompany.sections || [])];
+                              const sectionIndex = updatedSections.findIndex(s => s.sectionId === section.sectionId);
+                              if (sectionIndex >= 0) {
+                                updatedSections[sectionIndex] = {
+                                  ...updatedSections[sectionIndex],
+                                  content: newContent
+                                };
+                                updateCompanySections(updatedSections);
+                              }
+                            }}
+                            tag="p"
+                            className="sidebar-description"
+                            multiline={true}
+                            placeholder="Section content"
+                          />
+                          <div className="sidebar-field-actions">
+                            <button
+                              className="convert-to-array-btn"
+                              onClick={() => convertToArrayMode(section.sectionId || '')}
+                              title="Convert to multiple fields"
+                            >
+                              → Multiple Fields
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))
+              ) : (
+                <div className="sidebar-section">
+                  <div className="sidebar-section-header">
+                    <div className="sidebar-label">
+                      <EditableText
+                        value="DESCRIPTION"
+                        onSave={(newTitle) => {
+                          const newSection = {
+                            sectionId: 'temp-1',
+                            title: newTitle,
+                            content: 'Add your description here',
+                            order: 1
+                          };
+                          updateCompanySections([newSection]);
+                        }}
+                        tag="span"
+                        className="sidebar-label-text"
+                        placeholder="Section title"
+                      />
+                    </div>
+                    <button
+                      className="section-remove-btn"
+                      onClick={() => removeSection('temp-1')}
+                      title="Remove section"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <EditableText
+                    value="Add your description here"
+                    onSave={(newContent) => {
+                      const newSection = {
+                        sectionId: 'temp-1',
+                        title: 'DESCRIPTION',
+                        content: newContent,
+                        order: 1
+                      };
+                      updateCompanySections([newSection]);
+                    }}
+                    tag="p"
+                    className="sidebar-description"
+                    multiline={true}
+                    placeholder="Section content"
+                  />
+                </div>
+              )}
+              
+              {/* Add Section Button */}
+              <div className="sidebar-add-section">
+                <button
+                  className="add-section-btn"
+                  onClick={addNewSection}
+                  title="Add new section"
+                >
+                  <span className="add-section-icon">+</span>
+                  <span className="add-section-text">Add Section</span>
+                </button>
               </div>
             </div>
           </div>
         </div>
-      </section>
+      )}
 
       {/* Our Clients Section */}
       <section className="clients-section">
@@ -1494,6 +1656,70 @@ export default function Home() {
           opacity: 1;
         }
         
+        .feature-card:hover .feature-remove {
+          opacity: 1;
+        }
+        
+        .feature-remove {
+          position: absolute;
+          top: var(--space-2);
+          right: var(--space-2);
+          width: 24px;
+          height: 24px;
+          border: none;
+          background: rgba(255, 0, 0, 0.8);
+          color: white;
+          border-radius: 50%;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 16px;
+          font-weight: bold;
+          opacity: 0;
+          transition: all var(--transition-normal);
+          z-index: 10;
+        }
+        
+        .feature-remove:hover {
+          background: rgba(255, 0, 0, 1);
+          transform: scale(1.1);
+        }
+        
+        .feature-add {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: var(--space-6);
+          background: rgba(255, 255, 255, 0.08);
+          border: 2px dashed rgba(255, 255, 255, 0.3);
+          border-radius: var(--radius-xl);
+          cursor: pointer;
+          transition: all var(--transition-normal);
+          color: var(--text-secondary);
+          min-height: 120px;
+          backdrop-filter: blur(20px);
+        }
+        
+        .feature-add:hover {
+          border-color: var(--color-accent);
+          color: var(--color-accent);
+          background: rgba(212, 175, 55, 0.1);
+          transform: translateY(-4px);
+        }
+        
+        .feature-add-icon {
+          font-size: var(--text-2xl);
+          font-weight: var(--font-weight-bold);
+          margin-bottom: var(--space-2);
+        }
+        
+        .feature-add-text {
+          font-size: var(--text-base);
+          font-weight: var(--font-weight-medium);
+        }
+        
         .feature-icon {
           display: flex;
           align-items: center;
@@ -1664,6 +1890,11 @@ export default function Home() {
           .feature-content {
             text-align: center;
           }
+          
+          .feature-add {
+            min-height: 150px;
+            padding: var(--space-6);
+          }
         }
         
         @media (max-width: 768px) {
@@ -1708,6 +1939,11 @@ export default function Home() {
           
           .feature-content p {
             font-size: var(--text-sm);
+          }
+          
+          .feature-add {
+            min-height: 100px;
+            padding: var(--space-4);
           }
           
           .merged-actions {
@@ -1775,6 +2011,19 @@ export default function Home() {
           .feature-content p {
             font-size: var(--text-xs);
             line-height: 1.5;
+          }
+          
+          .feature-add {
+            min-height: 80px;
+            padding: var(--space-3);
+          }
+          
+          .feature-add-icon {
+            font-size: var(--text-xl);
+          }
+          
+          .feature-add-text {
+            font-size: var(--text-sm);
           }
           
           .btn-primary-action, .btn-secondary-action, .btn-tertiary-action {
@@ -1884,13 +2133,59 @@ export default function Home() {
           font-size: var(--text-xl);
           color: #ffffff !important;
           max-width: 800px;
-          margin: 0 auto;
+          margin: 0 auto var(--space-8) auto;
           line-height: 1.7;
           white-space: pre-line;
           text-align: center;
           opacity: ${isVisible ? 1 : 0};
           transform: ${isVisible ? 'translateY(0)' : 'translateY(30px)'};
           transition: all 0.8s ease 0.4s;
+        }
+
+        .story-actions {
+          display: flex;
+          justify-content: center;
+          margin-top: var(--space-6);
+          opacity: ${isVisible ? 1 : 0};
+          transform: ${isVisible ? 'translateY(0)' : 'translateY(30px)'};
+          transition: all 0.8s ease 0.6s;
+        }
+
+        .story-records-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: var(--space-3);
+          padding: var(--space-4) var(--space-6);
+          background: linear-gradient(135deg, var(--color-accent), #FFD700);
+          color: #000;
+          text-decoration: none;
+          border-radius: var(--radius-lg);
+          font-weight: var(--font-weight-semibold);
+          font-size: var(--text-base);
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+          border: none;
+          cursor: pointer;
+        }
+
+        .story-records-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+          background: linear-gradient(135deg, #FFD700, var(--color-accent));
+        }
+
+        .story-records-btn .btn-text {
+          font-family: var(--font-family-heading);
+        }
+
+        .story-records-btn .btn-icon {
+          width: 18px;
+          height: 18px;
+          transition: transform 0.3s ease;
+        }
+
+        .story-records-btn:hover .btn-icon {
+          transform: translateX(4px);
         }
         
         
@@ -1953,7 +2248,7 @@ export default function Home() {
           text-align: center;
           transition: all 0.4s ease;
           position: relative;
-          overflow: hidden;
+          overflow: visible;
         }
         
         .team-member::before {
@@ -2011,6 +2306,63 @@ export default function Home() {
         .member-position {
           color: var(--text-accent);
           font-size: var(--text-sm);
+          font-weight: var(--font-weight-medium);
+        }
+        
+        .team-member-remove {
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          background: rgba(255, 0, 0, 0.8);
+          color: white;
+          border: none;
+          border-radius: 50%;
+          width: 24px;
+          height: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          font-size: 16px;
+          font-weight: bold;
+          opacity: 0;
+          transition: opacity var(--transition-normal);
+          z-index: 10;
+        }
+        
+        .team-member:hover .team-member-remove {
+          opacity: 1;
+        }
+        
+        .team-member-add {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: var(--space-8);
+          background: var(--bg-secondary);
+          border: 2px dashed var(--border-primary);
+          border-radius: var(--radius-xl);
+          cursor: pointer;
+          transition: all var(--transition-normal);
+          color: var(--text-secondary);
+          min-height: 200px;
+        }
+        
+        .team-member-add:hover {
+          border-color: var(--color-accent);
+          color: var(--color-accent);
+          background: rgba(212, 175, 55, 0.1);
+        }
+        
+        .team-member-add-icon {
+          font-size: var(--text-4xl);
+          font-weight: var(--font-weight-bold);
+          margin-bottom: var(--space-3);
+        }
+        
+        .team-member-add-text {
+          font-size: var(--text-lg);
           font-weight: var(--font-weight-medium);
         }
         
@@ -2229,7 +2581,7 @@ export default function Home() {
           box-shadow: var(--shadow-luxury);
           transition: all var(--transition-normal);
           position: relative;
-          overflow: hidden;
+          overflow: visible;
         }
         
         .ending-stat::before {
@@ -2255,16 +2607,72 @@ export default function Home() {
         }
         
         .ending-stat-number {
-          font-size: var(--text-4xl);
+          font-size: var(--text-5xl);
           font-weight: var(--font-weight-bold);
-          color: var(--text-accent);
+          color: #d4af37 !important;
           margin-bottom: var(--space-2);
           font-family: var(--font-family-heading);
         }
         
         .ending-stat-label {
           font-size: var(--text-lg);
+          color: #ffffff !important;
+          font-weight: var(--font-weight-medium);
+        }
+        
+        .ending-stat-remove {
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          background: rgba(255, 0, 0, 0.8);
+          color: white;
+          border: none;
+          border-radius: 50%;
+          width: 24px;
+          height: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          font-size: 16px;
+          font-weight: bold;
+          opacity: 0;
+          transition: opacity var(--transition-normal);
+        }
+        
+        .ending-stat:hover .ending-stat-remove {
+          opacity: 1;
+        }
+        
+        .ending-stat-add {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: var(--space-6);
+          background: var(--bg-secondary);
+          border: 2px dashed var(--border-primary);
+          border-radius: var(--radius-xl);
+          cursor: pointer;
+          transition: all var(--transition-normal);
           color: var(--text-secondary);
+          min-height: 120px;
+        }
+        
+        .ending-stat-add:hover {
+          border-color: var(--color-accent);
+          color: var(--color-accent);
+          background: rgba(212, 175, 55, 0.1);
+        }
+        
+        .ending-stat-add-icon {
+          font-size: var(--text-2xl);
+          font-weight: var(--font-weight-bold);
+          margin-bottom: var(--space-2);
+        }
+        
+        .ending-stat-add-text {
+          font-size: var(--text-sm);
           font-weight: var(--font-weight-medium);
         }
         
@@ -2525,6 +2933,604 @@ export default function Home() {
           .client-item { width: 85vw; }
           .client-card { height: 60vh; }
           .client-meta { font-size: var(--text-base); }
+        }
+
+        /* Companies Section */
+        .companies-section {
+          position: relative;
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          overflow: hidden;
+          background: var(--bg-primary);
+        }
+
+        .companies-background {
+          position: absolute;
+          inset: 0;
+          z-index: 1;
+        }
+
+        .companies-gradient {
+          position: absolute;
+          inset: 0;
+          background: var(--gradient-luxury);
+          opacity: 0.8;
+        }
+
+        .companies-pattern {
+          position: absolute;
+          inset: 0;
+          background-image:
+            radial-gradient(circle at 20% 30%, var(--color-accent) 0%, transparent 30%),
+            radial-gradient(circle at 80% 70%, var(--color-purple) 0%, transparent 35%),
+            radial-gradient(circle at 50% 20%, var(--color-accent-soft) 0%, transparent 25%);
+          opacity: 0.06;
+        }
+
+        .companies-content {
+          position: relative;
+          z-index: 2;
+          width: 100%;
+          max-width: 1400px;
+          margin: 0 auto;
+          padding: var(--space-20) var(--space-6);
+        }
+
+        .companies-title {
+          font-size: clamp(2.5rem, 6vw, 4.5rem);
+          font-weight: var(--font-weight-bold);
+          line-height: 1.1;
+          margin-bottom: var(--space-16);
+          font-family: var(--font-family-heading);
+          color: var(--text-primary);
+          text-shadow: 0 6px 12px rgba(0, 0, 0, 0.35);
+        }
+
+        .companies-title-text {
+          display: inline;
+        }
+
+        .companies-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          gap: var(--space-6);
+          max-width: 1200px;
+          margin: 0 auto;
+        }
+
+        .company-card {
+          position: relative;
+          background: var(--bg-secondary);
+          border: 1px solid var(--border-primary);
+          border-radius: var(--radius-xl);
+          padding: var(--space-6);
+          transition: all 0.3s ease;
+          cursor: pointer;
+          min-height: 120px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .company-card:hover {
+          transform: translateY(-4px);
+          box-shadow: var(--shadow-luxury);
+          border-color: var(--color-accent);
+        }
+
+        .company-card-content {
+          text-align: center;
+          position: relative;
+          z-index: 2;
+        }
+
+        .company-logo {
+          margin-bottom: var(--space-4);
+        }
+
+        .company-logo-placeholder {
+          width: 60px;
+          height: 60px;
+          background: linear-gradient(135deg, #D4AF37, #FFD700);
+          border-radius: var(--radius-lg);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: var(--text-2xl);
+          font-weight: var(--font-weight-bold);
+          color: #000;
+          margin: 0 auto;
+          box-shadow: 0 6px 16px rgba(212, 175, 55, 0.4);
+        }
+
+        .company-name {
+          font-size: var(--text-lg);
+          font-weight: var(--font-weight-semibold);
+          color: var(--text-primary);
+          font-family: var(--font-family-heading);
+        }
+
+        .company-logo-image {
+          width: 60px;
+          height: 60px;
+          border-radius: var(--radius-lg);
+          object-fit: cover;
+          box-shadow: 0 6px 16px rgba(212, 175, 55, 0.4);
+        }
+
+        .companies-loading {
+          grid-column: 1 / -1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: var(--space-12);
+          color: var(--text-secondary);
+        }
+
+        .loading-spinner {
+          width: 40px;
+          height: 40px;
+          border: 3px solid var(--border-primary);
+          border-top: 3px solid var(--color-accent);
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin-bottom: var(--space-4);
+        }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
+        .companies-empty {
+          grid-column: 1 / -1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: var(--space-12);
+          color: var(--text-secondary);
+        }
+
+        /* Sidebar Styles */
+        .sidebar-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.7);
+          z-index: 1000;
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          backdrop-filter: blur(5px);
+        }
+
+        .companies-sidebar {
+          width: 500px;
+          height: 100vh;
+          background: var(--bg-secondary);
+          border-left: 1px solid var(--border-primary);
+          display: flex;
+          flex-direction: column;
+          box-shadow: -10px 0 30px rgba(0, 0, 0, 0.3);
+          animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+          from {
+            transform: translateX(100%);
+          }
+          to {
+            transform: translateX(0);
+          }
+        }
+
+        .sidebar-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: var(--space-6);
+          border-bottom: 1px solid var(--border-primary);
+        }
+
+        .sidebar-title {
+          font-size: var(--text-xl);
+          font-weight: var(--font-weight-bold);
+          color: var(--text-primary);
+          font-family: var(--font-family-heading);
+          display: flex;
+          align-items: center;
+          gap: var(--space-3);
+        }
+
+        .saving-indicator {
+          font-size: var(--text-sm);
+          font-weight: var(--font-weight-normal);
+          color: var(--color-accent);
+          font-style: italic;
+        }
+
+        .sidebar-close {
+          width: 32px;
+          height: 32px;
+          border: none;
+          background: var(--bg-primary);
+          color: var(--text-secondary);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          font-size: var(--text-lg);
+          transition: all 0.2s ease;
+        }
+
+        .sidebar-close:hover {
+          background: var(--color-accent);
+          color: #000;
+        }
+
+        .sidebar-content {
+          flex: 1;
+          padding: var(--space-6);
+          overflow-y: auto;
+        }
+
+        .sidebar-company-header {
+          display: flex;
+          align-items: center;
+          gap: var(--space-4);
+          margin-bottom: var(--space-8);
+          padding-bottom: var(--space-6);
+          border-bottom: 1px solid var(--border-primary);
+        }
+
+        .sidebar-company-logo {
+          flex-shrink: 0;
+        }
+
+        .sidebar-logo-placeholder {
+          width: 60px;
+          height: 60px;
+          background: linear-gradient(135deg, #D4AF37, #FFD700);
+          border-radius: var(--radius-lg);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: var(--text-2xl);
+          font-weight: var(--font-weight-bold);
+          color: #000;
+          box-shadow: 0 6px 16px rgba(212, 175, 55, 0.4);
+        }
+
+        .sidebar-logo-image {
+          width: 60px;
+          height: 60px;
+          border-radius: var(--radius-lg);
+          object-fit: cover;
+          box-shadow: 0 6px 16px rgba(212, 175, 55, 0.4);
+        }
+
+        .sidebar-company-name {
+          font-size: var(--text-2xl);
+          font-weight: var(--font-weight-bold);
+          color: var(--text-primary);
+          font-family: var(--font-family-heading);
+          margin: 0;
+        }
+
+        .sidebar-section {
+          margin-bottom: var(--space-8);
+        }
+
+        .sidebar-label {
+          display: block;
+          font-size: var(--text-sm);
+          font-weight: var(--font-weight-bold);
+          color: var(--color-accent);
+          margin-bottom: var(--space-3);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .sidebar-label-text {
+          color: var(--color-accent);
+          font-weight: var(--font-weight-bold);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .sidebar-description {
+          font-size: var(--text-base);
+          color: var(--text-primary);
+          line-height: 1.6;
+          margin: 0;
+        }
+
+        .sidebar-founders {
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-2);
+        }
+
+        .sidebar-founder {
+          font-size: var(--text-base);
+          color: var(--text-primary);
+          padding: var(--space-2) var(--space-3);
+          background: var(--bg-primary);
+          border: 1px solid var(--border-primary);
+          border-radius: var(--radius-md);
+        }
+
+        .sidebar-investment {
+          font-size: var(--text-base);
+          color: var(--text-primary);
+          font-weight: var(--font-weight-medium);
+          margin: 0;
+        }
+
+        .sidebar-array-content {
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-2);
+        }
+
+        .sidebar-array-item {
+          font-size: var(--text-base);
+          color: var(--text-primary);
+          padding: var(--space-2) var(--space-3);
+          background: var(--bg-primary);
+          border: 1px solid var(--border-primary);
+          border-radius: var(--radius-md);
+        }
+
+        .sidebar-no-sections {
+          font-size: var(--text-base);
+          color: var(--text-secondary);
+          font-style: italic;
+          text-align: center;
+          margin: 0;
+        }
+
+        .sidebar-section-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: var(--space-3);
+        }
+
+        .section-remove-btn {
+          width: 24px;
+          height: 24px;
+          border: none;
+          background: rgba(255, 0, 0, 0.8);
+          color: white;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          font-size: 16px;
+          font-weight: bold;
+          transition: all 0.2s ease;
+          opacity: 0.7;
+        }
+
+        .section-remove-btn:hover {
+          background: rgba(255, 0, 0, 1);
+          opacity: 1;
+          transform: scale(1.1);
+        }
+
+        .sidebar-add-section {
+          margin-top: var(--space-6);
+          padding-top: var(--space-4);
+          border-top: 1px solid var(--border-primary);
+        }
+
+        .add-section-btn {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: var(--space-2);
+          padding: var(--space-3) var(--space-4);
+          background: var(--bg-primary);
+          border: 2px dashed var(--border-primary);
+          border-radius: var(--radius-lg);
+          color: var(--text-secondary);
+          cursor: pointer;
+          transition: all 0.3s ease;
+          font-size: var(--text-sm);
+          font-weight: var(--font-weight-medium);
+        }
+
+        .add-section-btn:hover {
+          border-color: var(--color-accent);
+          color: var(--color-accent);
+          background: rgba(212, 175, 55, 0.1);
+        }
+
+        .add-section-icon {
+          font-size: var(--text-lg);
+          font-weight: var(--font-weight-bold);
+        }
+
+        .add-section-text {
+          font-size: var(--text-sm);
+        }
+
+        .sidebar-field-item {
+          display: flex;
+          align-items: center;
+          gap: var(--space-2);
+          margin-bottom: var(--space-2);
+        }
+
+        .field-remove-btn {
+          width: 20px;
+          height: 20px;
+          border: none;
+          background: rgba(255, 0, 0, 0.7);
+          color: white;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          font-size: 12px;
+          font-weight: bold;
+          transition: all 0.2s ease;
+          opacity: 0.7;
+          flex-shrink: 0;
+        }
+
+        .field-remove-btn:hover {
+          background: rgba(255, 0, 0, 1);
+          opacity: 1;
+          transform: scale(1.1);
+        }
+
+        .sidebar-field-actions {
+          display: flex;
+          gap: var(--space-2);
+          margin-top: var(--space-3);
+          padding-top: var(--space-2);
+          border-top: 1px solid var(--border-primary);
+        }
+
+        .add-field-btn,
+        .convert-to-array-btn,
+        .convert-to-single-btn {
+          padding: var(--space-2) var(--space-3);
+          background: var(--bg-primary);
+          border: 1px solid var(--border-primary);
+          border-radius: var(--radius-md);
+          color: var(--text-secondary);
+          cursor: pointer;
+          transition: all 0.2s ease;
+          font-size: var(--text-xs);
+          font-weight: var(--font-weight-medium);
+        }
+
+        .add-field-btn:hover,
+        .convert-to-array-btn:hover,
+        .convert-to-single-btn:hover {
+          border-color: var(--color-accent);
+          color: var(--color-accent);
+          background: rgba(212, 175, 55, 0.1);
+        }
+
+        .sidebar-single-content {
+          position: relative;
+        }
+
+        .sidebar-single-content .sidebar-field-actions {
+          margin-top: var(--space-2);
+          padding-top: var(--space-2);
+          border-top: 1px solid var(--border-primary);
+        }
+
+        /* Responsive Design for Companies Section */
+        @media (max-width: 1024px) {
+          .companies-content {
+            padding: var(--space-16) var(--space-4);
+          }
+          
+          .companies-grid {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--space-4);
+          }
+          
+          .companies-sidebar {
+            width: 400px;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .companies-section {
+            min-height: 80vh;
+          }
+          
+          .companies-title {
+            font-size: clamp(2rem, 8vw, 3.5rem);
+            margin-bottom: var(--space-12);
+          }
+          
+          .companies-grid {
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--space-4);
+          }
+          
+          .company-card {
+            min-height: 100px;
+            padding: var(--space-4);
+          }
+          
+          .company-logo-placeholder {
+            width: 50px;
+            height: 50px;
+            font-size: var(--text-xl);
+          }
+          
+          .company-name {
+            font-size: var(--text-base);
+          }
+          
+          .companies-sidebar {
+            width: 100vw;
+          }
+          
+          .sidebar-content {
+            padding: var(--space-4);
+          }
+        }
+
+        @media (max-width: 480px) {
+          .companies-section {
+            min-height: 70vh;
+          }
+          
+          .companies-content {
+            padding: var(--space-12) var(--space-3);
+          }
+          
+          .companies-grid {
+            grid-template-columns: 1fr;
+            gap: var(--space-3);
+          }
+          
+          .company-card {
+            min-height: 80px;
+            padding: var(--space-3);
+          }
+          
+          .company-logo-placeholder {
+            width: 40px;
+            height: 40px;
+            font-size: var(--text-lg);
+          }
+          
+          .company-name {
+            font-size: var(--text-sm);
+          }
+          
+          .sidebar-header {
+            padding: var(--space-4);
+          }
+          
+          .sidebar-content {
+            padding: var(--space-3);
+          }
+          
+          .sidebar-company-header {
+            flex-direction: column;
+            text-align: center;
+            gap: var(--space-3);
+          }
         }
 
       `}</style>

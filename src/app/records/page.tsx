@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { TrendingUp, Award, Users, BarChart3, Star, Quote, CheckCircle, ArrowRight, Download, Calendar, Building2, Pencil } from 'lucide-react';
-import { EditableText } from '../../components/EditableText';
+import { EditableText, EditableTextRef } from '../../components/EditableText';
 import { cmsService, PageContentData } from '../../services/cmsService';
 import { PageType } from '../../constants/pageTypes';
 
@@ -15,6 +15,9 @@ export default function RecordsPage() {
   const [joinSuccessData, setJoinSuccessData] = useState<PageContentData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const hasLoadedRef = useRef(false);
+  const btnTextStartJourneyRef = useRef<EditableTextRef>(null);
+  const btnTextTrackRecordRef = useRef<EditableTextRef>(null);
+  const btnTextViewInsightsRef = useRef<EditableTextRef>(null);
 
   const performanceMetrics = [
     {
@@ -82,44 +85,6 @@ export default function RecordsPage() {
     }
   ];
 
-  const notableDeals = [
-    {
-      client: 'TechVentures Inc.',
-      dealType: 'M&A Acquisition',
-      value: '$2.5B',
-      industry: 'Technology',
-      year: '2024',
-      description: 'Strategic acquisition of AI startup portfolio',
-      status: 'Completed'
-    },
-    {
-      client: 'Global Manufacturing Corp.',
-      dealType: 'IPO Advisory',
-      value: '$1.8B',
-      industry: 'Manufacturing',
-      year: '2024',
-      description: 'Successful public offering and market debut',
-      status: 'Completed'
-    },
-    {
-      client: 'Energy Solutions Ltd.',
-      dealType: 'Private Equity Exit',
-      value: '$4.1B',
-      industry: 'Energy',
-      year: '2023',
-      description: 'Strategic divestiture to international consortium',
-      status: 'Completed'
-    },
-    {
-      client: 'Financial Services Group',
-      dealType: 'Debt Restructuring',
-      value: '$3.2B',
-      industry: 'Financial Services',
-      year: '2023',
-      description: 'Complex debt restructuring and refinancing',
-      status: 'Completed'
-    }
-  ];
 
   const awards = [
     {
@@ -292,8 +257,7 @@ export default function RecordsPage() {
                 border: '1px solid rgba(212, 175, 55, 0.3)',
               }}
               onClick={() => {
-                const event = new Event('dblclick');
-                document.querySelector('.btn-text-track-record')?.dispatchEvent(event);
+                btnTextTrackRecordRef.current?.triggerEdit();
               }}
             />
             <div
@@ -313,6 +277,7 @@ export default function RecordsPage() {
             >
               <Award size={20} />
               <EditableText
+                ref={btnTextTrackRecordRef}
                 value={successStoriesData?.btnTxt?.[0]?.buttonText || 'Proven Track Record'}
                 onSave={(newText) => {
                   const updatedBtnTxt = [...(successStoriesData?.btnTxt || [{ buttonText: 'Proven Track Record' }])];
@@ -322,6 +287,7 @@ export default function RecordsPage() {
                 tag="span"
                 className="btn-text btn-text-track-record"
                 placeholder="Button text"
+                disableDoubleClick={true}
               />
             </div>
           </div>
@@ -439,190 +405,136 @@ export default function RecordsPage() {
               boxShadow: 'var(--shadow-lg)',
             }}
           >
-            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
-              <EditableText
-                value={performanceMetricsData?.numbers?.[0]?.value || currentYearData.totalDeals.toString()}
-                onSave={(newValue) => {
-                  const updatedNumbers = [...(performanceMetricsData?.numbers || [])];
-                  updatedNumbers[0] = { 
-                    value: newValue, 
-                    label: updatedNumbers[0]?.label || 'Total Deals' 
-                  };
-                  handlePerformanceMetricsNumbersSave(updatedNumbers);
-                }}
-                tag="div"
-                style={{
-                  fontSize: 'var(--text-4xl)',
-                  fontWeight: 'var(--font-weight-bold)',
-                  color: 'var(--text-accent)',
-                  marginBottom: 'var(--space-2)',
-                  fontFamily: 'var(--font-family-heading)',
-                }}
-                placeholder="Metric value"
-              />
-              <EditableText
-                value={performanceMetricsData?.numbers?.[0]?.label || 'Total Deals'}
-                onSave={(newLabel) => {
-                  const updatedNumbers = [...(performanceMetricsData?.numbers || [])];
-                  updatedNumbers[0] = { 
-                    value: updatedNumbers[0]?.value || currentYearData.totalDeals.toString(), 
-                    label: newLabel 
-                  };
-                  handlePerformanceMetricsNumbersSave(updatedNumbers);
-                }}
-                tag="div"
-                style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-lg)' }}
-                placeholder="Metric label"
-              />
-            </div>
+            {performanceMetricsData?.numbers?.map((number, index) => (
+              <div key={index} style={{ 
+                textAlign: 'center', 
+                display: 'flex', 
+                flexDirection: 'column', 
+                justifyContent: 'center', 
+                height: '100%',
+                position: 'relative'
+              }}>
+                <button
+                  onClick={() => {
+                    const updatedNumbers = [...(performanceMetricsData?.numbers || [])];
+                    updatedNumbers.splice(index, 1);
+                    handlePerformanceMetricsNumbersSave(updatedNumbers);
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: 'var(--space-2)',
+                    right: 'var(--space-2)',
+                    width: '24px',
+                    height: '24px',
+                    border: 'none',
+                    background: 'rgba(255, 0, 0, 0.8)',
+                    color: 'white',
+                    borderRadius: '50%',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '16px',
+                    fontWeight: 'bold',
+                    opacity: 0,
+                    transition: 'all var(--transition-normal)',
+                    zIndex: 10
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.opacity = '1';
+                    e.currentTarget.style.background = 'rgba(255, 0, 0, 1)';
+                    e.currentTarget.style.transform = 'scale(1.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.opacity = '0';
+                    e.currentTarget.style.background = 'rgba(255, 0, 0, 0.8)';
+                    e.currentTarget.style.transform = 'scale(1)';
+                  }}
+                  title="Remove this metric"
+                >
+                  ×
+                </button>
+                <EditableText
+                  value={number.value}
+                  onSave={(newValue) => {
+                    const updatedNumbers = [...(performanceMetricsData?.numbers || [])];
+                    updatedNumbers[index] = { 
+                      value: newValue, 
+                      label: updatedNumbers[index]?.label || 'New Metric' 
+                    };
+                    handlePerformanceMetricsNumbersSave(updatedNumbers);
+                  }}
+                  tag="div"
+                  style={{
+                    fontSize: 'var(--text-4xl)',
+                    fontWeight: 'var(--font-weight-bold)',
+                    color: 'var(--text-accent)',
+                    marginBottom: 'var(--space-2)',
+                    fontFamily: 'var(--font-family-heading)',
+                  }}
+                  placeholder="Metric value"
+                />
+                <EditableText
+                  value={number.label}
+                  onSave={(newLabel) => {
+                    const updatedNumbers = [...(performanceMetricsData?.numbers || [])];
+                    updatedNumbers[index] = { 
+                      value: updatedNumbers[index]?.value || 'New Value', 
+                      label: newLabel 
+                    };
+                    handlePerformanceMetricsNumbersSave(updatedNumbers);
+                  }}
+                  tag="div"
+                  style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-lg)' }}
+                  placeholder="Metric label"
+                />
+              </div>
+            ))}
             
-            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
-              <EditableText
-                value={performanceMetricsData?.numbers?.[1]?.value || `$${currentYearData.totalValue}B+`}
-                onSave={(newValue) => {
-                  const updatedNumbers = [...(performanceMetricsData?.numbers || [])];
-                  updatedNumbers[1] = { 
-                    value: newValue, 
-                    label: updatedNumbers[1]?.label || 'Deal Value' 
-                  };
-                  handlePerformanceMetricsNumbersSave(updatedNumbers);
-                }}
-                tag="div"
-                style={{
-                  fontSize: 'var(--text-4xl)',
-                  fontWeight: 'var(--font-weight-bold)',
-                  color: 'var(--text-accent)',
-                  marginBottom: 'var(--space-2)',
-                  fontFamily: 'var(--font-family-heading)',
-                }}
-                placeholder="Metric value"
-              />
-              <EditableText
-                value={performanceMetricsData?.numbers?.[1]?.label || 'Deal Value'}
-                onSave={(newLabel) => {
-                  const updatedNumbers = [...(performanceMetricsData?.numbers || [])];
-                  updatedNumbers[1] = { 
-                    value: updatedNumbers[1]?.value || `$${currentYearData.totalValue}B+`, 
-                    label: newLabel 
-                  };
-                  handlePerformanceMetricsNumbersSave(updatedNumbers);
-                }}
-                tag="div"
-                style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-lg)' }}
-                placeholder="Metric label"
-              />
-            </div>
-            
-            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
-              <EditableText
-                value={performanceMetricsData?.numbers?.[2]?.value || `${currentYearData.successRate}%`}
-                onSave={(newValue) => {
-                  const updatedNumbers = [...(performanceMetricsData?.numbers || [])];
-                  updatedNumbers[2] = { 
-                    value: newValue, 
-                    label: updatedNumbers[2]?.label || 'Success Rate' 
-                  };
-                  handlePerformanceMetricsNumbersSave(updatedNumbers);
-                }}
-                tag="div"
-                style={{
-                  fontSize: 'var(--text-4xl)',
-                  fontWeight: 'var(--font-weight-bold)',
-                  color: 'var(--text-accent)',
-                  marginBottom: 'var(--space-2)',
-                  fontFamily: 'var(--font-family-heading)',
-                }}
-                placeholder="Metric value"
-              />
-              <EditableText
-                value={performanceMetricsData?.numbers?.[2]?.label || 'Success Rate'}
-                onSave={(newLabel) => {
-                  const updatedNumbers = [...(performanceMetricsData?.numbers || [])];
-                  updatedNumbers[2] = { 
-                    value: updatedNumbers[2]?.value || `${currentYearData.successRate}%`, 
-                    label: newLabel 
-                  };
-                  handlePerformanceMetricsNumbersSave(updatedNumbers);
-                }}
-                tag="div"
-                style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-lg)' }}
-                placeholder="Metric label"
-              />
-            </div>
-            
-            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
-              <EditableText
-                value={performanceMetricsData?.numbers?.[3]?.value || `${currentYearData.clientSatisfaction}/5`}
-                onSave={(newValue) => {
-                  const updatedNumbers = [...(performanceMetricsData?.numbers || [])];
-                  updatedNumbers[3] = { 
-                    value: newValue, 
-                    label: updatedNumbers[3]?.label || 'Client Rating' 
-                  };
-                  handlePerformanceMetricsNumbersSave(updatedNumbers);
-                }}
-                tag="div"
-                style={{
-                  fontSize: 'var(--text-4xl)',
-                  fontWeight: 'var(--font-weight-bold)',
-                  color: 'var(--text-accent)',
-                  marginBottom: 'var(--space-2)',
-                  fontFamily: 'var(--font-family-heading)',
-                }}
-                placeholder="Metric value"
-              />
-              <EditableText
-                value={performanceMetricsData?.numbers?.[3]?.label || 'Client Rating'}
-                onSave={(newLabel) => {
-                  const updatedNumbers = [...(performanceMetricsData?.numbers || [])];
-                  updatedNumbers[3] = { 
-                    value: updatedNumbers[3]?.value || `${currentYearData.clientSatisfaction}/5`, 
-                    label: newLabel 
-                  };
-                  handlePerformanceMetricsNumbersSave(updatedNumbers);
-                }}
-                tag="div"
-                style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-lg)' }}
-                placeholder="Metric label"
-              />
-            </div>
-            
-            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
-              <EditableText
-                value={performanceMetricsData?.numbers?.[4]?.value || currentYearData.growth}
-                onSave={(newValue) => {
-                  const updatedNumbers = [...(performanceMetricsData?.numbers || [])];
-                  updatedNumbers[4] = { 
-                    value: newValue, 
-                    label: updatedNumbers[4]?.label || 'YoY Growth' 
-                  };
-                  handlePerformanceMetricsNumbersSave(updatedNumbers);
-                }}
-                tag="div"
-                style={{
-                  fontSize: 'var(--text-4xl)',
-                  fontWeight: 'var(--font-weight-bold)',
-                  color: 'var(--text-accent)',
-                  marginBottom: 'var(--space-2)',
-                  fontFamily: 'var(--font-family-heading)',
-                }}
-                placeholder="Metric value"
-              />
-              <EditableText
-                value={performanceMetricsData?.numbers?.[4]?.label || 'YoY Growth'}
-                onSave={(newLabel) => {
-                  const updatedNumbers = [...(performanceMetricsData?.numbers || [])];
-                  updatedNumbers[4] = { 
-                    value: updatedNumbers[4]?.value || currentYearData.growth, 
-                    label: newLabel 
-                  };
-                  handlePerformanceMetricsNumbersSave(updatedNumbers);
-                }}
-                tag="div"
-                style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-lg)' }}
-                placeholder="Metric label"
-              />
-            </div>
+            <button
+              onClick={() => {
+                const updatedNumbers = [...(performanceMetricsData?.numbers || []), { value: 'New Value', label: 'New Metric' }];
+                handlePerformanceMetricsNumbersSave(updatedNumbers);
+              }}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 'var(--space-6)',
+                background: 'rgba(255, 255, 255, 0.08)',
+                border: '2px dashed rgba(255, 255, 255, 0.3)',
+                borderRadius: 'var(--radius-xl)',
+                cursor: 'pointer',
+                transition: 'all var(--transition-normal)',
+                color: 'var(--text-secondary)',
+                minHeight: '120px',
+                backdropFilter: 'blur(20px)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-accent)';
+                e.currentTarget.style.color = 'var(--color-accent)';
+                e.currentTarget.style.background = 'rgba(212, 175, 55, 0.1)';
+                e.currentTarget.style.transform = 'translateY(-4px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                e.currentTarget.style.color = 'var(--text-secondary)';
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+              title="Add new metric"
+            >
+              <div style={{
+                fontSize: 'var(--text-2xl)',
+                fontWeight: 'var(--font-weight-bold)',
+                marginBottom: 'var(--space-2)'
+              }}>+</div>
+              <div style={{
+                fontSize: 'var(--text-base)',
+                fontWeight: 'var(--font-weight-medium)'
+              }}>Add Metric</div>
+            </button>
           </div>
         </div>
       </section>
@@ -769,160 +681,6 @@ export default function RecordsPage() {
         </div>
       </section>
 
-      {/* Notable Deals */}
-      <section
-        style={{
-          padding: 'var(--space-20) var(--space-6)',
-          background: 'var(--bg-primary)',
-        }}
-      >
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <h2
-            style={{
-              fontSize: 'var(--text-4xl)',
-              fontWeight: 'var(--font-weight-bold)',
-              color: 'var(--text-primary)',
-              marginBottom: 'var(--space-8)',
-              fontFamily: 'var(--font-family-heading)',
-              textAlign: 'center',
-            }}
-          >
-            Notable Deals
-          </h2>
-          
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
-              gap: 'var(--space-6)',
-            }}
-          >
-            {notableDeals.map((deal, index) => (
-              <div
-                key={index}
-                style={{
-                  background: 'var(--bg-secondary)',
-                  padding: 'var(--space-6)',
-                  borderRadius: 'var(--radius-xl)',
-                  border: '1px solid var(--border-primary)',
-                  boxShadow: 'var(--shadow-md)',
-                  transition: 'all var(--transition-normal)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-                }}
-              >
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    marginBottom: 'var(--space-4)',
-                  }}
-                >
-                  <div>
-                    <h4
-                      style={{
-                        fontSize: 'var(--text-xl)',
-                        fontWeight: 'var(--font-weight-semibold)',
-                        color: 'var(--text-primary)',
-                        marginBottom: 'var(--space-2)',
-                        fontFamily: 'var(--font-family-heading)',
-                      }}
-                    >
-                      {deal.client}
-                    </h4>
-                    <p
-                      style={{
-                        color: 'var(--text-accent)',
-                        fontSize: 'var(--text-lg)',
-                        fontWeight: 'var(--font-weight-medium)',
-                        marginBottom: 'var(--space-1)',
-                      }}
-                    >
-                      {deal.dealType}
-                    </p>
-                  </div>
-                  <div
-                    style={{
-                      textAlign: 'right',
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: 'var(--text-2xl)',
-                        fontWeight: 'var(--font-weight-bold)',
-                        color: 'var(--text-accent)',
-                        fontFamily: 'var(--font-family-heading)',
-                      }}
-                    >
-                      {deal.value}
-                    </div>
-                    <div
-                      style={{
-                        color: 'var(--text-muted)',
-                        fontSize: 'var(--text-sm)',
-                      }}
-                    >
-                      {deal.year}
-                    </div>
-                  </div>
-                </div>
-                
-                <p
-                  style={{
-                    color: 'var(--text-secondary)',
-                    lineHeight: '1.5',
-                    marginBottom: 'var(--space-4)',
-                  }}
-                >
-                  {deal.description}
-                </p>
-                
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}
-                >
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 'var(--space-2)',
-                    }}
-                  >
-                    <CheckCircle size={16} color="var(--color-accent)" />
-                    <span
-                      style={{
-                        color: 'var(--text-accent)',
-                        fontSize: 'var(--text-sm)',
-                        fontWeight: 'var(--font-weight-medium)',
-                      }}
-                    >
-                      {deal.status}
-                    </span>
-                  </div>
-                  <span
-                    style={{
-                      color: 'var(--text-muted)',
-                      fontSize: 'var(--text-sm)',
-                    }}
-                  >
-                    {deal.industry}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Awards & Recognition */}
       <section
@@ -1095,8 +853,7 @@ export default function RecordsPage() {
                   border: '1px solid rgba(212, 175, 55, 0.3)',
                 }}
                 onClick={() => {
-                  const event = new Event('dblclick');
-                  document.querySelector('.btn-text-start-journey')?.dispatchEvent(event);
+                  btnTextStartJourneyRef.current?.triggerEdit();
                 }}
               />
               <a
@@ -1125,6 +882,7 @@ export default function RecordsPage() {
                 }}
               >
                 <EditableText
+                  ref={btnTextStartJourneyRef}
                   value={joinSuccessData?.btnTxt?.[0]?.buttonText || 'Start Your Journey'}
                   onSave={(newText) => {
                     const updatedBtnTxt = [...(joinSuccessData?.btnTxt || [{ buttonText: 'Start Your Journey' }, { buttonText: 'View Insights' }])];
@@ -1134,6 +892,7 @@ export default function RecordsPage() {
                   tag="span"
                   className="btn-text btn-text-start-journey"
                   placeholder="Button text"
+                  disableDoubleClick={true}
                 />
                 <ArrowRight size={20} />
               </a>
@@ -1152,8 +911,7 @@ export default function RecordsPage() {
                   border: '1px solid rgba(212, 175, 55, 0.3)',
                 }}
                 onClick={() => {
-                  const event = new Event('dblclick');
-                  document.querySelector('.btn-text-view-insights')?.dispatchEvent(event);
+                  btnTextViewInsightsRef.current?.triggerEdit();
                 }}
               />
               <a
@@ -1184,6 +942,7 @@ export default function RecordsPage() {
                 }}
               >
                 <EditableText
+                  ref={btnTextViewInsightsRef}
                   value={joinSuccessData?.btnTxt?.[1]?.buttonText || 'View Insights'}
                   onSave={(newText) => {
                     const updatedBtnTxt = [...(joinSuccessData?.btnTxt || [{ buttonText: 'Start Your Journey' }, { buttonText: 'View Insights' }])];
@@ -1193,6 +952,7 @@ export default function RecordsPage() {
                   tag="span"
                   className="btn-text btn-text-view-insights"
                   placeholder="Button text"
+                  disableDoubleClick={true}
                 />
               </a>
             </div>

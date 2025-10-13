@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Calendar, User, ArrowRight, TrendingUp, BarChart3, Globe, DollarSign, Clock, ExternalLink, Pencil } from 'lucide-react';
-import { EditableText } from '../../components/EditableText';
+import { Calendar, User, ArrowRight, TrendingUp, BarChart3, Globe, DollarSign, Clock, ExternalLink, Pencil, Trash2 } from 'lucide-react';
+import { EditableText, EditableTextRef } from '../../components/EditableText';
 import { cmsService, PageContentData } from '../../services/cmsService';
+import { blogService, BlogType, BlogTypeWithBlogs, Blog, UpdateBlogData, CreateBlogData } from '../../services/blogService';
 import { PageType } from '../../constants/pageTypes';
 
 export default function InsightsPage() {
@@ -11,157 +12,50 @@ export default function InsightsPage() {
   const [insightsData, setInsightsData] = useState<PageContentData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const hasLoadedRef = useRef(false);
+  const btnTextNewsRef = useRef<EditableTextRef>(null);
 
-  const featuredArticle = {
-    title: 'Market Outlook 2024: Navigating Economic Uncertainty',
-    excerpt: 'Our comprehensive analysis of global markets and investment opportunities in an uncertain economic environment.',
-    author: 'Sarah Mitchell',
-    date: 'December 15, 2023',
-    readTime: '8 min read',
-    image: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&h=400&fit=crop',
-    category: 'Market Analysis'
+  // Blog Types State
+  const [blogTypes, setBlogTypes] = useState<BlogType[]>([]);
+  const [blogTypesWithBlogs, setBlogTypesWithBlogs] = useState<BlogTypeWithBlogs[]>([]);
+  // Remove selectedCategory state since buttons are not filters
+  
+  // Dynamic refs for blog type components
+  const blogTypeRefs = useRef<{ [key: string]: EditableTextRef | null }>({});
+
+  // Dynamic blog type rendering - no hardcoded functions needed
+
+  const defaultCategories = ['All'];
+  const categories = insightsData?.btnTxt?.map(btn => btn.buttonText) || defaultCategories;
+
+  // Load blog types
+  const loadBlogTypes = async () => {
+    try {
+      const response = await blogService.getBlogTypes();
+      if (response.success && response.data) {
+        console.log('Loaded blog types:', response.data);
+        setBlogTypes(response.data);
+      } else {
+        console.error('Failed to load blog types:', response.message);
+      }
+    } catch (error) {
+      console.error('Error loading blog types:', error);
+    }
   };
 
-  const articles = [
-    {
-      title: 'The Future of Sustainable Investing',
-      excerpt: 'Exploring ESG trends and their impact on investment strategies.',
-      author: 'David Chen',
-      date: 'December 10, 2023',
-      readTime: '5 min read',
-      image: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=400&h=250&fit=crop',
-      category: 'ESG'
-    },
-    {
-      title: 'Private Equity Trends in 2024',
-      excerpt: 'Key insights into private equity market dynamics and opportunities.',
-      author: 'Emily Rodriguez',
-      date: 'December 8, 2023',
-      readTime: '6 min read',
-      image: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=250&fit=crop',
-      category: 'Private Equity'
-    },
-    {
-      title: 'Technology Sector Analysis',
-      excerpt: 'Deep dive into tech valuations and growth prospects.',
-      author: 'Michael Thompson',
-      date: 'December 5, 2023',
-      readTime: '7 min read',
-      image: 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=400&h=250&fit=crop',
-      category: 'Technology'
-    },
-    {
-      title: 'Real Estate Investment Strategies',
-      excerpt: 'Navigating commercial real estate in changing market conditions.',
-      author: 'Sarah Mitchell',
-      date: 'December 3, 2023',
-      readTime: '4 min read',
-      image: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=250&fit=crop',
-      category: 'Real Estate'
-    },
-    {
-      title: 'Emerging Markets Opportunities',
-      excerpt: 'Identifying growth potential in developing economies.',
-      author: 'David Chen',
-      date: 'November 30, 2023',
-      readTime: '5 min read',
-      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=250&fit=crop',
-      category: 'Emerging Markets'
-    },
-    {
-      title: 'Fixed Income Market Update',
-      excerpt: 'Interest rate environment and bond market outlook.',
-      author: 'Emily Rodriguez',
-      date: 'November 28, 2023',
-      readTime: '6 min read',
-      image: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400&h=250&fit=crop',
-      category: 'Fixed Income'
+  // Load blog types with blogs
+  const loadBlogTypesWithBlogs = async () => {
+    try {
+      const response = await blogService.getTypesWithBlogs(20, true); // 20 blogs per type, admin mode to see all blogs
+      if (response.success && response.data) {
+        console.log('Loaded blog types with blogs:', response.data);
+        setBlogTypesWithBlogs(response.data);
+      } else {
+        console.error('Failed to load blog types with blogs:', response.message);
+      }
+    } catch (error) {
+      console.error('Error loading blog types with blogs:', error);
     }
-  ];
-
-  const reports = [
-    {
-      title: 'Q4 2023 Market Report',
-      description: 'Comprehensive quarterly analysis of global markets and investment opportunities.',
-      downloadCount: '2.5K',
-      size: '2.4 MB',
-      image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=300&h=200&fit=crop'
-    },
-    {
-      title: 'ESG Investment Guide 2024',
-      description: 'Complete guide to environmental, social, and governance investing.',
-      downloadCount: '1.8K',
-      size: '3.1 MB',
-      image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300&h=200&fit=crop'
-    },
-    {
-      title: 'Private Equity Outlook',
-      description: 'In-depth analysis of private equity trends and opportunities.',
-      downloadCount: '1.2K',
-      size: '2.8 MB',
-      image: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=300&h=200&fit=crop'
-    }
-  ];
-
-  const newsItems = [
-    {
-      title: 'Federal Reserve Signals Potential Rate Cuts in 2024',
-      summary: 'The Federal Reserve hints at possible interest rate reductions as inflation shows signs of cooling.',
-      source: 'Financial Times',
-      timeAgo: '2 hours ago',
-      category: 'Monetary Policy',
-      image: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&h=250&fit=crop',
-      url: '#'
-    },
-    {
-      title: 'Tech Stocks Rally on Strong Q4 Earnings Reports',
-      summary: 'Major technology companies report better-than-expected quarterly results, driving market optimism.',
-      source: 'Bloomberg',
-      timeAgo: '4 hours ago',
-      category: 'Technology',
-      image: 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=400&h=250&fit=crop',
-      url: '#'
-    },
-    {
-      title: 'European Markets Open Higher Amid Economic Recovery Signs',
-      summary: 'European stock markets show positive momentum as economic indicators suggest recovery.',
-      source: 'Reuters',
-      timeAgo: '6 hours ago',
-      category: 'Markets',
-      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=250&fit=crop',
-      url: '#'
-    },
-    {
-      title: 'Sustainable Investment Funds See Record Inflows',
-      summary: 'ESG-focused investment products attract unprecedented capital as investors prioritize sustainability.',
-      source: 'Wall Street Journal',
-      timeAgo: '8 hours ago',
-      category: 'ESG',
-      image: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=400&h=250&fit=crop',
-      url: '#'
-    },
-    {
-      title: 'Cryptocurrency Market Shows Signs of Stabilization',
-      summary: 'Digital asset prices consolidate as regulatory clarity improves and institutional adoption grows.',
-      source: 'CoinDesk',
-      timeAgo: '10 hours ago',
-      category: 'Crypto',
-      image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=250&fit=crop',
-      url: '#'
-    },
-    {
-      title: 'Real Estate Investment Trusts Post Strong Performance',
-      summary: 'REITs outperform broader market as commercial real estate shows resilience.',
-      source: 'Real Estate Weekly',
-      timeAgo: '12 hours ago',
-      category: 'Real Estate',
-      image: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=250&fit=crop',
-      url: '#'
-    }
-  ];
-
-  const defaultCategories = ['All', 'Market Analysis', 'ESG', 'Private Equity', 'Technology', 'Real Estate', 'Emerging Markets', 'Fixed Income'];
-  const categories = insightsData?.btnTxt?.map(btn => btn.buttonText) || defaultCategories;
+  };
 
   // Load insights data
   useEffect(() => {
@@ -171,11 +65,15 @@ export default function InsightsPage() {
       
       try {
         setIsLoading(true);
-        const response = await cmsService.getPageContent(PageType.INSIGHTS);
-        if (response.success && response.data) {
-          setInsightsData(response.data);
+        const [insightsResponse] = await Promise.all([
+          cmsService.getPageContent(PageType.INSIGHTS),
+          loadBlogTypesWithBlogs()
+        ]);
+        
+        if (insightsResponse.success && insightsResponse.data) {
+          setInsightsData(insightsResponse.data);
         } else {
-          console.error('Failed to load insights page content:', response.message);
+          console.error('Failed to load insights page content:', insightsResponse.message);
         }
       } catch (error) {
         console.error('Error loading insights content:', error);
@@ -207,6 +105,137 @@ export default function InsightsPage() {
     const updatedData = { ...insightsData, btnTxt: newBtnTxt };
     setInsightsData(updatedData);
     await saveToCMS(updatedData);
+  };
+
+  // Blog type handlers
+  const handleBlogTypeUpdate = async (typeId: string, field: string, value: string) => {
+    try {
+      console.log('Updating blog type:', { typeId, field, value });
+      const updateData = { [field]: value };
+      const response = await blogService.updateBlogType(typeId, updateData);
+      
+      if (response.success && response.data) {
+        console.log('Blog type updated successfully:', response.data);
+        // Reload blog types with blogs to get the updated data from server
+        await loadBlogTypesWithBlogs();
+      } else {
+        console.error('Failed to update blog type:', response.message);
+      }
+    } catch (error) {
+      console.error('Error updating blog type:', error);
+    }
+  };
+
+  // Convert human-readable date to ISO 8601 format
+  const convertDateToISO = (dateString: string): string => {
+    try {
+      // Parse the human-readable date (e.g., "October 5, 2025")
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        throw new Error('Invalid date format');
+      }
+      // Convert to ISO 8601 format
+      return date.toISOString();
+    } catch (error) {
+      console.error('Error converting date:', error);
+      // Return current date as fallback
+      return new Date().toISOString();
+    }
+  };
+
+  // Update blog content
+  const handleBlogUpdate = async (blogId: string, field: keyof UpdateBlogData, value: string | Date | number) => {
+    try {
+      let updateValue = value;
+      
+      // Convert date string to ISO format if it's a publishedAt field
+      if (field === 'publishedAt' && typeof value === 'string') {
+        updateValue = convertDateToISO(value);
+      }
+      
+      const updateData: UpdateBlogData = { [field]: updateValue };
+      const response = await blogService.updateBlog(blogId, updateData);
+      
+      if (response.success && response.data) {
+        console.log('Blog updated successfully:', response.data);
+        // Reload blog types with blogs to get the updated data from server
+        await loadBlogTypesWithBlogs();
+      } else {
+        console.error('Failed to update blog:', response.message);
+      }
+    } catch (error) {
+      console.error('Error updating blog:', error);
+    }
+  };
+
+  // Generate sequential slug
+  const generateSlug = (typeId: string): string => {
+    // Find all blogs of this type to count existing ones
+    const blogType = blogTypesWithBlogs.find(type => type.typeId === typeId);
+    const existingBlogs = blogType?.blogs || [];
+    const nextNumber = existingBlogs.length + 1;
+    return `new-blog-${nextNumber}`;
+  };
+
+  // Create blog
+  const handleBlogCreate = async (typeId: string) => {
+    try {
+      console.log('Creating blog for typeId:', typeId);
+      
+      // Get the blog type name for better default content
+      const blogType = blogTypesWithBlogs.find(type => type.typeId === typeId);
+      const typeName = blogType?.name || 'Blog';
+      
+      const newBlogData: CreateBlogData = {
+        title: `New ${typeName} Post`,
+        slug: generateSlug(typeId),
+        excerpt: `Enter your ${typeName.toLowerCase()} excerpt here...`,
+        author: 'Author Name',
+        content: 'new content new content',
+        typeId: typeId,
+        image: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=400&h=250&fit=crop', // Default image for articles
+        tags: ['new', typeName.toLowerCase()],
+        isPublished: false,
+        readTime: 5,
+        publishedAt: new Date() // Add published date for proper card display
+      };
+
+      console.log('Sending create blog request with data:', newBlogData);
+      const response = await blogService.createBlog(newBlogData);
+      
+      if (response.success && response.data) {
+        console.log('Blog created successfully:', response.data);
+        // Reload blog types with blogs to get the updated data from server
+        console.log('Reloading blog types with blogs...');
+        await loadBlogTypesWithBlogs();
+        console.log('Blog types reloaded successfully');
+      } else {
+        console.error('Failed to create blog:', response.message);
+        alert(`Failed to create blog: ${response.message}`);
+      }
+    } catch (error) {
+      console.error('Error creating blog:', error);
+      alert(`Error creating blog: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
+  // Delete blog
+  const handleBlogDelete = async (blogId: string) => {
+    try {
+      if (confirm('Are you sure you want to delete this blog? This action cannot be undone.')) {
+        const response = await blogService.deleteBlog(blogId);
+        
+        if (response.success) {
+          console.log('Blog deleted successfully');
+          // Reload blog types with blogs to get the updated data from server
+          await loadBlogTypesWithBlogs();
+        } else {
+          console.error('Failed to delete blog:', response.message);
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting blog:', error);
+    }
   };
 
   const saveToCMS = async (data: PageContentData) => {
@@ -285,8 +314,8 @@ export default function InsightsPage() {
                 key={category}
                 style={{
                   padding: 'var(--space-3) var(--space-6)',
-                  background: category === 'All' ? 'var(--color-accent)' : 'var(--bg-secondary)',
-                  color: category === 'All' ? 'var(--text-inverse)' : 'var(--text-primary)',
+                  background: 'var(--bg-secondary)',
+                  color: 'var(--text-primary)',
                   border: '1px solid var(--border-primary)',
                   borderRadius: 'var(--radius-full)',
                   fontSize: 'var(--text-sm)',
@@ -294,20 +323,18 @@ export default function InsightsPage() {
                   cursor: 'pointer',
                   transition: 'all var(--transition-fast)',
                 }}
+                // Remove onClick since buttons are not filters
                 onMouseEnter={(e) => {
-                  if (category !== 'All') {
                     e.currentTarget.style.background = 'var(--bg-tertiary)';
-                  }
                 }}
                 onMouseLeave={(e) => {
-                  if (category !== 'All') {
                     e.currentTarget.style.background = 'var(--bg-secondary)';
-                  }
                 }}
               >
                 <EditableText
                   value={category}
                   onSave={(newText) => {
+                    // Update CMS button text for categories
                     const updatedBtnTxt = [...(insightsData?.btnTxt || defaultCategories.map(cat => ({ buttonText: cat })))];
                     updatedBtnTxt[index] = { buttonText: newText };
                     handleInsightsBtnTxtSave(updatedBtnTxt);
@@ -322,187 +349,100 @@ export default function InsightsPage() {
         </div>
       </section>
 
-      {/* Featured Article */}
+      {/* Dynamic Blog Type Sections */}
+      {blogTypesWithBlogs.map((blogType, index) => (
       <section
+          key={blogType.typeId}
         style={{
           padding: 'var(--space-20) var(--space-6)',
-          background: 'var(--bg-primary)',
+            background: index % 2 === 0 ? 'var(--bg-primary)' : 'var(--bg-secondary)',
         }}
       >
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <h2
-            style={{
-              fontSize: 'var(--text-3xl)',
-              fontWeight: 'var(--font-weight-bold)',
-              color: 'var(--text-primary)',
-              marginBottom: 'var(--space-8)',
-              fontFamily: 'var(--font-family-heading)',
-            }}
-          >
-            Featured Article
-          </h2>
-          
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-              gap: 'var(--space-8)',
-              background: 'var(--bg-secondary)',
-              borderRadius: 'var(--radius-xl)',
-              overflow: 'hidden',
-              border: '1px solid var(--border-primary)',
-              boxShadow: 'var(--shadow-lg)',
-            }}
-          >
-            <div
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-8)' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-4)' }}>
+            <EditableText
+                  ref={(el) => {
+                    blogTypeRefs.current[blogType.typeId] = el;
+                  }}
+                  value={blogType.name}
+              onSave={(newText) => {
+                    handleBlogTypeUpdate(blogType.typeId, 'name', newText);
+              }}
+              tag="h2"
               style={{
-                position: 'relative',
-                minHeight: '300px',
+                fontSize: 'var(--text-3xl)',
+                fontWeight: 'var(--font-weight-bold)',
+                color: 'var(--text-primary)',
+                fontFamily: 'var(--font-family-heading)',
+                margin: 0,
+              }}
+              placeholder="Section title"
+            />
+              <EditableText
+                  value={blogType.description || "Content description"}
+                onSave={(newText) => {
+                    handleBlogTypeUpdate(blogType.typeId, 'description', newText);
+                  }}
+                  tag="span"
+                style={{
+                  fontSize: 'var(--text-lg)',
+                    color: 'var(--text-secondary)',
+                    margin: 0,
+                    lineHeight: '1.4',
+                  }}
+                  placeholder="Section description"
+                  />
+                </div>
+            <button
+              onClick={() => {
+                  handleBlogCreate(blogType.typeId);
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-2)',
+                padding: 'var(--space-3) var(--space-4)',
+                background: 'var(--color-accent)',
+                color: 'var(--text-inverse)',
+                border: 'none',
+                borderRadius: 'var(--radius-lg)',
+                fontSize: 'var(--text-sm)',
+                fontWeight: 'var(--font-weight-semibold)',
+                cursor: 'pointer',
+                transition: 'all var(--transition-fast)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'var(--color-accent-dark)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'var(--color-accent)';
+                e.currentTarget.style.transform = 'translateY(0)';
               }}
             >
-              <img
-                src={featuredArticle.image}
-                alt={featuredArticle.title}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 'var(--space-4)',
-                  left: 'var(--space-4)',
-                  background: 'var(--color-accent)',
-                  color: 'var(--text-inverse)',
-                  padding: 'var(--space-2) var(--space-4)',
-                  borderRadius: 'var(--radius-full)',
-                  fontSize: 'var(--text-sm)',
-                  fontWeight: 'var(--font-weight-medium)',
-                }}
-              >
-                {featuredArticle.category}
-              </div>
-            </div>
-            
-            <div style={{ padding: 'var(--space-8)' }}>
-              <h3
-                style={{
-                  fontSize: 'var(--text-3xl)',
-                  fontWeight: 'var(--font-weight-bold)',
-                  color: 'var(--text-primary)',
-                  marginBottom: 'var(--space-4)',
-                  fontFamily: 'var(--font-family-heading)',
-                }}
-              >
-                {featuredArticle.title}
-              </h3>
-              <p
-                style={{
-                  color: 'var(--text-secondary)',
-                  lineHeight: '1.6',
-                  marginBottom: 'var(--space-6)',
-                  fontSize: 'var(--text-lg)',
-                }}
-              >
-                {featuredArticle.excerpt}
-              </p>
-              
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--space-4)',
-                  marginBottom: 'var(--space-6)',
-                  flexWrap: 'wrap',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                  <User size={16} color="var(--text-accent)" />
-                  <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>
-                    {featuredArticle.author}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                  <Calendar size={16} color="var(--text-accent)" />
-                  <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>
-                    {featuredArticle.date}
-                  </span>
-                </div>
-                <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
-                  {featuredArticle.readTime}
-                </span>
-              </div>
-              
-              <button
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--space-2)',
-                  padding: 'var(--space-3) var(--space-6)',
-                  background: 'var(--color-accent)',
-                  color: 'var(--text-inverse)',
-                  border: 'none',
-                  borderRadius: 'var(--radius-lg)',
-                  fontSize: 'var(--text-base)',
-                  fontWeight: 'var(--font-weight-semibold)',
-                  cursor: 'pointer',
-                  transition: 'all var(--transition-fast)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'var(--color-accent-dark)';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'var(--color-accent)';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-              >
-                Read More
-                <ArrowRight size={16} />
-              </button>
-            </div>
+              <Pencil size={16} />
+              Add Blog
+            </button>
           </div>
-        </div>
-      </section>
-
-      {/* Articles Grid */}
-      <section
-        style={{
-          padding: 'var(--space-20) var(--space-6)',
-          background: 'var(--bg-secondary)',
-        }}
-      >
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <h2
-            style={{
-              fontSize: 'var(--text-3xl)',
-              fontWeight: 'var(--font-weight-bold)',
-              color: 'var(--text-primary)',
-              marginBottom: 'var(--space-8)',
-              fontFamily: 'var(--font-family-heading)',
-            }}
-          >
-            Latest Articles
-          </h2>
           
-          <div
-            style={{
+            {/* Blog Type Content */}
+            {blogType.blogs && blogType.blogs.length > 0 ? (
+              <div style={{ 
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
               gap: 'var(--space-8)',
-            }}
-          >
-            {articles.map((article, index) => (
+              }}>
+                {blogType.blogs.map((blog, blogIndex) => (
               <article
-                key={index}
+                    key={blog.blogId}
                 style={{
                   background: 'var(--bg-primary)',
                   borderRadius: 'var(--radius-xl)',
                   overflow: 'hidden',
                   border: '1px solid var(--border-primary)',
                   transition: 'all var(--transition-normal)',
+                      position: 'relative'
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'translateY(-4px)';
@@ -513,18 +453,69 @@ export default function InsightsPage() {
                   e.currentTarget.style.boxShadow = 'none';
                 }}
               >
-                <div style={{ position: 'relative' }}>
-                  <img
-                    src={article.image}
-                    alt={article.title}
+                  <button
+                    onClick={() => {
+                        handleBlogDelete(blog.blogId);
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: 'var(--space-3)',
+                      right: 'var(--space-3)',
+                      background: 'rgba(255, 0, 0, 0.8)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '50%',
+                        width: '24px',
+                        height: '24px',
+                        cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                        fontSize: '16px',
+                        fontWeight: 'bold',
+                        opacity: 0,
+                        transition: 'all var(--transition-normal)',
+                        zIndex: 10
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.opacity = '1';
+                        e.currentTarget.style.background = 'rgba(255, 0, 0, 1)';
+                      e.currentTarget.style.transform = 'scale(1.1)';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.opacity = '0';
+                        e.currentTarget.style.background = 'rgba(255, 0, 0, 0.8)';
+                      e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                      title="Delete this blog"
+                  >
+                      ×
+                  </button>
+                    <div style={{ position: 'relative', height: index === 3 ? '150px' : '200px', overflow: 'hidden' }}>
+                      <img
+                        src={blog.image || 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=400&h=250&fit=crop'}
+                        alt={blog.title}
                     style={{
                       width: '100%',
-                      height: '200px',
+                          height: '100%',
                       objectFit: 'cover',
                     }}
                   />
-                  <div
-                    style={{
+                      {index === 3 ? (
+                        <div style={{
+                          position: 'absolute',
+                          top: 'var(--space-3)',
+                          right: 'var(--space-3)',
+                          background: 'rgba(0, 0, 0, 0.7)',
+                          color: 'white',
+                          padding: 'var(--space-1) var(--space-2)',
+                          borderRadius: 'var(--radius-md)',
+                          fontSize: 'var(--text-xs)',
+                        }}>
+                          {Math.floor(Math.random() * 3 + 1)}.{Math.floor(Math.random() * 9 + 1)} MB
+                        </div>
+                      ) : (
+                        <div style={{
                       position: 'absolute',
                       top: 'var(--space-3)',
                       left: 'var(--space-3)',
@@ -534,457 +525,162 @@ export default function InsightsPage() {
                       borderRadius: 'var(--radius-full)',
                       fontSize: 'var(--text-xs)',
                       fontWeight: 'var(--font-weight-medium)',
-                    }}
-                  >
-                    {article.category}
+                        }}>
+                          {blogType.name}
                   </div>
+                      )}
                 </div>
-                
                 <div style={{ padding: 'var(--space-6)' }}>
-                  <h3
+                  <EditableText
+                        value={blog.title || 'Untitled Blog'}
+                    onSave={(newText) => {
+                        handleBlogUpdate(blog.blogId, 'title', newText);
+                    }}
+                    tag="h3"
                     style={{
-                      fontSize: 'var(--text-xl)',
+                          fontSize: 'var(--text-xl)',
                       fontWeight: 'var(--font-weight-semibold)',
                       color: 'var(--text-primary)',
                       marginBottom: 'var(--space-3)',
-                      lineHeight: '1.3',
+                          lineHeight: '1.3',
                     }}
-                  >
-                    {article.title}
-                  </h3>
-                  <p
+                        placeholder={index === 3 ? "Report title" : "Blog title"}
+                  />
+                  <EditableText
+                        value={blog.excerpt || 'No excerpt available'}
+                    onSave={(newText) => {
+                        handleBlogUpdate(blog.blogId, 'excerpt', newText);
+                    }}
+                    tag="p"
                     style={{
                       color: 'var(--text-secondary)',
                       lineHeight: '1.5',
                       marginBottom: 'var(--space-4)',
                       fontSize: 'var(--text-sm)',
-                    }}
-                  >
-                    {article.excerpt}
-                  </p>
-                  
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      marginBottom: 'var(--space-4)',
-                      flexWrap: 'wrap',
-                      gap: 'var(--space-2)',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                      <User size={14} color="var(--text-accent)" />
-                      <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)' }}>
-                        {article.author}
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                      <Calendar size={14} color="var(--text-accent)" />
-                      <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)' }}>
-                        {article.date}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                    }}
-                  >
-                    <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>
-                      {article.readTime}
+                        }}
+                        placeholder={index === 3 ? "Report description" : "Blog excerpt"}
+                      />
+                      
+                      {index === 3 ? (
+                        // Report-style layout for fourth blog type
+                        <>
+                          <div style={{ marginBottom: 'var(--space-4)' }}>
+                            <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>
+                              {Math.floor(Math.random() * 5000 + 1000).toLocaleString()} downloads
                     </span>
-                    <button
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 'var(--space-1)',
-                        background: 'none',
-                        border: 'none',
-                        color: 'var(--text-accent)',
-                        fontSize: 'var(--text-sm)',
-                        fontWeight: 'var(--font-weight-medium)',
-                        cursor: 'pointer',
-                        transition: 'all var(--transition-fast)',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.color = 'var(--color-accent-dark)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.color = 'var(--text-accent)';
-                      }}
-                    >
-                      Read More
-                      <ArrowRight size={14} />
-                    </button>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* News Section */}
-      <section
-        style={{
-          padding: 'var(--space-20) var(--space-6)',
-          background: 'var(--bg-primary)',
-        }}
-      >
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 'var(--space-8)',
-              flexWrap: 'wrap',
-              gap: 'var(--space-4)',
-            }}
-          >
-            <h2
+                    </div>
+            <button
               style={{
-                fontSize: 'var(--text-3xl)',
-                fontWeight: 'var(--font-weight-bold)',
-                color: 'var(--text-primary)',
-                fontFamily: 'var(--font-family-heading)',
+                              width: '100%',
+                              padding: 'var(--space-3)',
+                background: 'var(--color-accent)',
+                color: 'var(--text-inverse)',
+                border: 'none',
+                borderRadius: 'var(--radius-lg)',
+                fontSize: 'var(--text-sm)',
+                fontWeight: 'var(--font-weight-semibold)',
+                cursor: 'pointer',
+                transition: 'all var(--transition-fast)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'var(--color-accent-dark)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'var(--color-accent)';
+                e.currentTarget.style.transform = 'translateY(0)';
               }}
             >
-              Latest News
-            </h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-              <Pencil 
-                size={16} 
-                style={{
-                  cursor: 'pointer',
-                  color: 'var(--color-accent)',
-                  transition: 'all 0.2s ease',
-                  padding: '4px',
-                  borderRadius: '4px',
-                  background: 'rgba(212, 175, 55, 0.1)',
-                  border: '1px solid rgba(212, 175, 55, 0.3)',
-                }}
-                onClick={() => {
-                  const event = new Event('dblclick');
-                  document.querySelector('.btn-text-news')?.dispatchEvent(event);
-                }}
-              />
-              <button
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--space-2)',
-                  padding: 'var(--space-3) var(--space-6)',
-                  background: 'var(--color-accent)',
-                  color: 'var(--text-inverse)',
-                  border: 'none',
-                  borderRadius: 'var(--radius-lg)',
-                  fontSize: 'var(--text-sm)',
-                  fontWeight: 'var(--font-weight-semibold)',
-                  cursor: 'pointer',
-                  transition: 'all var(--transition-fast)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'var(--color-accent-dark)';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'var(--color-accent)';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-              >
-                <EditableText
-                  value={insightsData?.btnTxt?.[0]?.buttonText || 'View All News'}
-                  onSave={(newText) => {
-                    const updatedBtnTxt = [...(insightsData?.btnTxt || [{ buttonText: 'View All News' }])];
-                    updatedBtnTxt[0] = { buttonText: newText };
-                    handleInsightsBtnTxtSave(updatedBtnTxt);
-                  }}
-                  tag="span"
-                  className="btn-text btn-text-news"
-                  placeholder="Button text"
-                />
-                <ExternalLink size={16} />
-              </button>
-            </div>
-          </div>
-          
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
-              gap: 'var(--space-6)',
-            }}
-          >
-            {newsItems.map((news, index) => (
-              <article
-                key={index}
-                style={{
-                  background: 'var(--bg-secondary)',
-                  borderRadius: 'var(--radius-xl)',
-                  overflow: 'hidden',
-                  border: '1px solid var(--border-primary)',
-                  transition: 'all var(--transition-normal)',
-                  cursor: 'pointer',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-4px)';
-                  e.currentTarget.style.boxShadow = 'var(--shadow-xl)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-                onClick={() => window.open(news.url, '_blank')}
-              >
-                <div style={{ position: 'relative' }}>
-                  <img
-                    src={news.image}
-                    alt={news.title}
-                    style={{
-                      width: '100%',
-                      height: '180px',
-                      objectFit: 'cover',
-                    }}
-                  />
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: 'var(--space-3)',
-                      left: 'var(--space-3)',
-                      background: 'var(--color-accent)',
-                      color: 'var(--text-inverse)',
-                      padding: 'var(--space-1) var(--space-3)',
-                      borderRadius: 'var(--radius-full)',
-                      fontSize: 'var(--text-xs)',
-                      fontWeight: 'var(--font-weight-medium)',
-                    }}
-                  >
-                    {news.category}
-                  </div>
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: 'var(--space-3)',
-                      right: 'var(--space-3)',
-                      background: 'rgba(0, 0, 0, 0.7)',
-                      color: 'white',
-                      padding: 'var(--space-1) var(--space-2)',
-                      borderRadius: 'var(--radius-md)',
-                      fontSize: 'var(--text-xs)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 'var(--space-1)',
-                    }}
-                  >
-                    <Clock size={12} />
-                    {news.timeAgo}
-                  </div>
-                </div>
-                
-                <div style={{ padding: 'var(--space-6)' }}>
-                  <h3
-                    style={{
-                      fontSize: 'var(--text-lg)',
-                      fontWeight: 'var(--font-weight-semibold)',
-                      color: 'var(--text-primary)',
-                      marginBottom: 'var(--space-3)',
-                      lineHeight: '1.4',
-                    }}
-                  >
-                    {news.title}
-                  </h3>
-                  <p
-                    style={{
-                      color: 'var(--text-secondary)',
-                      lineHeight: '1.5',
-                      marginBottom: 'var(--space-4)',
-                      fontSize: 'var(--text-sm)',
-                    }}
-                  >
-                    {news.summary}
-                  </p>
-                  
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      paddingTop: 'var(--space-4)',
-                      borderTop: '1px solid var(--border-primary)',
-                    }}
-                  >
-                    <span
-                      style={{
-                        color: 'var(--text-muted)',
-                        fontSize: 'var(--text-xs)',
-                        fontWeight: 'var(--font-weight-medium)',
-                      }}
-                    >
-                      {news.source}
-                    </span>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 'var(--space-1)',
-                        color: 'var(--text-accent)',
-                        fontSize: 'var(--text-xs)',
-                        fontWeight: 'var(--font-weight-medium)',
-                      }}
-                    >
-                      Read More
-                      <ExternalLink size={12} />
-                    </div>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Research Reports */}
-      <section
-        style={{
-          padding: 'var(--space-20) var(--space-6)',
-          background: 'var(--bg-primary)',
-        }}
-      >
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <h2
-            style={{
-              fontSize: 'var(--text-3xl)',
-              fontWeight: 'var(--font-weight-bold)',
-              color: 'var(--text-primary)',
-              marginBottom: 'var(--space-8)',
-              fontFamily: 'var(--font-family-heading)',
-            }}
-          >
-            Research Reports
-          </h2>
-          
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-              gap: 'var(--space-8)',
-            }}
-          >
-            {reports.map((report, index) => (
-              <div
-                key={index}
-                style={{
-                  background: 'var(--bg-secondary)',
-                  borderRadius: 'var(--radius-xl)',
-                  overflow: 'hidden',
-                  border: '1px solid var(--border-primary)',
-                  transition: 'all var(--transition-normal)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-4px)';
-                  e.currentTarget.style.boxShadow = 'var(--shadow-xl)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-              >
-                <div style={{ position: 'relative' }}>
-                  <img
-                    src={report.image}
-                    alt={report.title}
-                    style={{
-                      width: '100%',
-                      height: '150px',
-                      objectFit: 'cover',
-                    }}
-                  />
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: 'var(--space-3)',
-                      right: 'var(--space-3)',
-                      background: 'rgba(0, 0, 0, 0.7)',
-                      color: 'white',
-                      padding: 'var(--space-1) var(--space-2)',
-                      borderRadius: 'var(--radius-md)',
-                      fontSize: 'var(--text-xs)',
-                    }}
-                  >
-                    {report.size}
-                  </div>
-                </div>
-                
-                <div style={{ padding: 'var(--space-6)' }}>
-                  <h3
-                    style={{
-                      fontSize: 'var(--text-xl)',
-                      fontWeight: 'var(--font-weight-semibold)',
-                      color: 'var(--text-primary)',
-                      marginBottom: 'var(--space-3)',
-                    }}
-                  >
-                    {report.title}
-                  </h3>
-                  <p
-                    style={{
-                      color: 'var(--text-secondary)',
-                      lineHeight: '1.5',
-                      marginBottom: 'var(--space-4)',
-                      fontSize: 'var(--text-sm)',
-                    }}
-                  >
-                    {report.description}
-                  </p>
-                  
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      marginBottom: 'var(--space-4)',
-                    }}
-                  >
-                    <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>
-                      {report.downloadCount} downloads
+                            Download Report
+            </button>
+                        </>
+                      ) : (
+                        // Regular blog layout for first three blog types
+                        <>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                              <User size={14} color="var(--text-accent)" />
+                  <EditableText
+                                value={blog.author || 'Unknown Author'}
+                    onSave={(newText) => {
+                                  handleBlogUpdate(blog.blogId, 'author', newText);
+                                }}
+                                tag="span"
+                                style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)' }}
+                                placeholder="Author name"
+                              />
+                            </div>
+                  <EditableText
+                              value={blog.readTime ? `${blog.readTime} min read` : '5 min read'}
+                    onSave={(newText) => {
+                                const readTimeMatch = newText.match(/(\d+)/);
+                                const readTimeValue = readTimeMatch ? parseInt(readTimeMatch[1]) : 5;
+                                handleBlogUpdate(blog.blogId, 'readTime', readTimeValue);
+                              }}
+                              tag="span"
+                              style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}
+                              placeholder="5 min read"
+                            />
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                              <Calendar size={14} color="var(--text-accent)" />
+                              <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)' }}>
+                                {blog.publishedAt ? new Date(blog.publishedAt).toLocaleDateString('en-US', { 
+                                  year: 'numeric', 
+                                  month: 'short', 
+                                  day: 'numeric' 
+                                }) : 'No date'}
                     </span>
                   </div>
-                  
                   <button
                     style={{
-                      width: '100%',
-                      padding: 'var(--space-3)',
-                      background: 'var(--color-accent)',
-                      color: 'var(--text-inverse)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 'var(--space-1)',
+                                background: 'none',
                       border: 'none',
-                      borderRadius: 'var(--radius-lg)',
+                                color: 'var(--text-accent)',
                       fontSize: 'var(--text-sm)',
-                      fontWeight: 'var(--font-weight-semibold)',
+                                fontWeight: 'var(--font-weight-medium)',
                       cursor: 'pointer',
                       transition: 'all var(--transition-fast)',
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'var(--color-accent-dark)';
-                      e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.color = 'var(--color-accent-dark)';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'var(--color-accent)';
-                      e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.color = 'var(--text-accent)';
                     }}
                   >
-                    Download Report
+                              Read More
+                              <ArrowRight size={14} />
                   </button>
                 </div>
+                        </>
+                      )}
               </div>
+                  </article>
             ))}
           </div>
+            ) : (
+              <div style={{
+                textAlign: 'center',
+                padding: 'var(--space-16)',
+                background: 'var(--bg-primary)',
+                borderRadius: 'var(--radius-xl)',
+                border: '2px dashed var(--border-primary)',
+                color: 'var(--text-secondary)',
+              }}>
+                <p>No blogs available for this category yet.</p>
+                <p style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-2)' }}>
+                  Click "Add Blog" to create the first blog post.
+                </p>
+              </div>
+            )}
         </div>
       </section>
+      ))}
     </div>
   );
 }
