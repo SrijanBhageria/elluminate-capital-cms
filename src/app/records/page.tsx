@@ -157,66 +157,93 @@ export default function RecordsPage() {
 
   // Handlers
   const handleSuccessStoriesTitleSave = async (newTitle: string) => {
-    if (!successStoriesData) return;
-    const updatedData = { ...successStoriesData, title: newTitle };
+    const updatedData = { 
+      ...successStoriesData, 
+      pageType: PageType.SUCCESS_STORIES,
+      title: newTitle 
+    };
     setSuccessStoriesData(updatedData);
     await saveToCMS(updatedData);
   };
 
   const handleSuccessStoriesSubtitleSave = async (newSubtitle: string) => {
-    if (!successStoriesData) return;
-    const updatedData = { ...successStoriesData, subtitle: newSubtitle };
+    const updatedData = { 
+      ...successStoriesData, 
+      pageType: PageType.SUCCESS_STORIES,
+      subtitle: newSubtitle 
+    };
     setSuccessStoriesData(updatedData);
     await saveToCMS(updatedData);
   };
 
   const handleSuccessStoriesBtnTxtSave = async (newBtnTxt: Array<{ buttonText: string }>) => {
-    if (!successStoriesData) return;
-    const updatedData = { ...successStoriesData, btnTxt: newBtnTxt };
+    const updatedData = { 
+      ...successStoriesData, 
+      pageType: PageType.SUCCESS_STORIES,
+      btnTxt: newBtnTxt 
+    };
     setSuccessStoriesData(updatedData);
     await saveToCMS(updatedData);
   };
 
   // Performance metrics handlers
   const handlePerformanceMetricsTitleSave = async (newTitle: string) => {
-    if (!performanceMetricsData) return;
-    const updatedData = { ...performanceMetricsData, title: newTitle };
+    const updatedData = { 
+      ...performanceMetricsData, 
+      pageType: PageType.PERFORMANCE_METRICS,
+      title: newTitle 
+    };
     setPerformanceMetricsData(updatedData);
     await saveToCMS(updatedData);
   };
 
   const handlePerformanceMetricsBtnTxtSave = async (newBtnTxt: Array<{ buttonText: string }>) => {
-    if (!performanceMetricsData) return;
-    const updatedData = { ...performanceMetricsData, btnTxt: newBtnTxt };
+    const updatedData = { 
+      ...performanceMetricsData, 
+      pageType: PageType.PERFORMANCE_METRICS,
+      btnTxt: newBtnTxt 
+    };
     setPerformanceMetricsData(updatedData);
     await saveToCMS(updatedData);
   };
 
   const handlePerformanceMetricsNumbersSave = async (newNumbers: Array<{ value: string; label: string }>) => {
-    if (!performanceMetricsData) return;
-    const updatedData = { ...performanceMetricsData, numbers: newNumbers };
+    const updatedData = { 
+      ...performanceMetricsData, 
+      pageType: PageType.PERFORMANCE_METRICS,
+      numbers: newNumbers 
+    };
     setPerformanceMetricsData(updatedData);
     await saveToCMS(updatedData);
   };
 
   // Join success handlers
   const handleJoinSuccessTitleSave = async (newTitle: string) => {
-    if (!joinSuccessData) return;
-    const updatedData = { ...joinSuccessData, title: newTitle };
+    const updatedData = { 
+      ...joinSuccessData, 
+      pageType: PageType.JOIN_SUCCESS,
+      title: newTitle 
+    };
     setJoinSuccessData(updatedData);
     await saveToCMS(updatedData);
   };
 
   const handleJoinSuccessSubtitleSave = async (newSubtitle: string) => {
-    if (!joinSuccessData) return;
-    const updatedData = { ...joinSuccessData, subtitle: newSubtitle };
+    const updatedData = { 
+      ...joinSuccessData, 
+      pageType: PageType.JOIN_SUCCESS,
+      subtitle: newSubtitle 
+    };
     setJoinSuccessData(updatedData);
     await saveToCMS(updatedData);
   };
 
   const handleJoinSuccessBtnTxtSave = async (newBtnTxt: Array<{ buttonText: string }>) => {
-    if (!joinSuccessData) return;
-    const updatedData = { ...joinSuccessData, btnTxt: newBtnTxt };
+    const updatedData = { 
+      ...joinSuccessData, 
+      pageType: PageType.JOIN_SUCCESS,
+      btnTxt: newBtnTxt 
+    };
     setJoinSuccessData(updatedData);
     await saveToCMS(updatedData);
   };

@@ -87,22 +87,31 @@ export default function InsightsPage() {
 
   // Handlers
   const handleInsightsTitleSave = async (newTitle: string) => {
-    if (!insightsData) return;
-    const updatedData = { ...insightsData, title: newTitle };
+    const updatedData = { 
+      ...insightsData, 
+      pageType: PageType.INSIGHTS,
+      title: newTitle 
+    };
     setInsightsData(updatedData);
     await saveToCMS(updatedData);
   };
 
   const handleInsightsSubtitleSave = async (newSubtitle: string) => {
-    if (!insightsData) return;
-    const updatedData = { ...insightsData, subtitle: newSubtitle };
+    const updatedData = { 
+      ...insightsData, 
+      pageType: PageType.INSIGHTS,
+      subtitle: newSubtitle 
+    };
     setInsightsData(updatedData);
     await saveToCMS(updatedData);
   };
 
   const handleInsightsBtnTxtSave = async (newBtnTxt: Array<{ buttonText: string }>) => {
-    if (!insightsData) return;
-    const updatedData = { ...insightsData, btnTxt: newBtnTxt };
+    const updatedData = { 
+      ...insightsData, 
+      pageType: PageType.INSIGHTS,
+      btnTxt: newBtnTxt 
+    };
     setInsightsData(updatedData);
     await saveToCMS(updatedData);
   };

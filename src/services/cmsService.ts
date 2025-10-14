@@ -28,7 +28,7 @@ class CMSService {
 
   async createOrUpdatePageContent(data: PageContentData): Promise<ApiResponse<any>> {
     try {
-      const response = await fetch(`${this.baseUrl}/page/createOrUpdatePageContent?pageType=${data.pageType}`, {
+      const response = await fetch(`${this.baseUrl}/page/createOrUpdatePageContent`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

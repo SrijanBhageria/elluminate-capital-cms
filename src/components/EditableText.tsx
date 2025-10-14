@@ -69,7 +69,6 @@ export const EditableText = forwardRef<EditableTextRef, EditableTextProps>(({
   };
 
   const handleMouseEnter = () => {
-    console.log('Mouse enter - setting hovered to true');
     setIsHovered(true);
     if (elementRef.current && !disableDoubleClick) {
       const rect = elementRef.current.getBoundingClientRect();
@@ -91,7 +90,6 @@ export const EditableText = forwardRef<EditableTextRef, EditableTextProps>(({
         left = viewportWidth - 100; // Ensure tooltip doesn't go off right edge
       }
       
-      console.log('Tooltip position:', { top, left });
       setTooltipPosition({ top, left });
     }
   };
@@ -160,7 +158,6 @@ export const EditableText = forwardRef<EditableTextRef, EditableTextProps>(({
         onDoubleClick={handleDoubleClick}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={() => {
-          console.log('Mouse leave - setting hovered to false');
           setIsHovered(false);
         }}
       >
