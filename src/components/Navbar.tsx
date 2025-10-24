@@ -116,7 +116,7 @@ const Navbar: React.FC = () => {
         }
         
         .navbar.scrolled {
-          background: rgba(26, 15, 26, 0.95);
+          background: rgba(0, 0, 0, 0.95);
           backdrop-filter: blur(20px);
           border: none;
           box-shadow: var(--shadow-luxury);
@@ -124,7 +124,7 @@ const Navbar: React.FC = () => {
         
         /* Over video section - always visible */
         .navbar.over-video {
-          background: rgba(26, 15, 26, 0.95);
+          background: rgba(0, 0, 0, 0.95);
           backdrop-filter: blur(20px);
           box-shadow: var(--shadow-luxury);
         }
