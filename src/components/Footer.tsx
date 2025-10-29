@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Mail, Phone, MapPin, Linkedin, Twitter, Facebook, ArrowUp } from 'lucide-react';
 import { EditableText } from './EditableText';
-import { footerService, FooterData, FooterSection, ContactInfo, SocialMedia, LegalLink } from '../services/footerService';
+import { footerService, FooterData, FooterSection, ContactInfo, SocialMedia, LegalLink, FooterLink } from '../services/footerService';
 
 const Footer: React.FC = () => {
   const [footerData, setFooterData] = useState<FooterData | null>(null);
@@ -94,7 +94,7 @@ const Footer: React.FC = () => {
   }, []);
 
   // Handle updating footer data
-  const handleUpdateFooter = async (field: keyof FooterData, value: any) => {
+  const handleUpdateFooter = async (field: keyof FooterData, value: string | FooterSection[]) => {
     try {
       const response = await footerService.updateFooterField(field, value);
       if (response.success && response.data) {
@@ -123,7 +123,7 @@ const Footer: React.FC = () => {
   };
 
   // Handle updating section
-  const handleUpdateSection = async (sectionIndex: number, field: keyof FooterSection, value: any) => {
+  const handleUpdateSection = async (sectionIndex: number, field: keyof FooterSection, value: string | FooterLink[]) => {
     if (!footerData) return;
     
     try {

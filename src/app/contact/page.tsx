@@ -158,7 +158,7 @@ export default function ContactPage() {
                     Message Sent!
                   </h3>
                   <p style={{ color: 'var(--text-secondary)' }}>
-                    Thank you for your inquiry. We'll get back to you within 24 hours.
+                    Thank you for your inquiry. We&apos;ll get back to you within 24 hours.
                   </p>
                 </div>
               ) : (

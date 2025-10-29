@@ -18,7 +18,7 @@ export interface EditableTextRef {
   triggerEdit: () => void;
 }
 
-export const EditableText = forwardRef<EditableTextRef, EditableTextProps>(({
+export const EditableText = forwardRef<EditableTextRef, EditableTextProps>(function EditableText({
   value,
   onSave,
   className = '',
@@ -27,7 +27,7 @@ export const EditableText = forwardRef<EditableTextRef, EditableTextProps>(({
   multiline = false,
   tag = 'span',
   disableDoubleClick = false
-}, ref) => {
+}, ref) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value);
   const [isHovered, setIsHovered] = useState(false);
@@ -51,9 +51,11 @@ export const EditableText = forwardRef<EditableTextRef, EditableTextProps>(({
   useEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
-      inputRef.current.select();
+      if (!multiline) {
+        (inputRef.current as HTMLInputElement).select();
+      }
     }
-  }, [isEditing]);
+  }, [isEditing, multiline]);
 
   // Cleanup tooltip on unmount
   useEffect(() => {
@@ -123,6 +125,7 @@ export const EditableText = forwardRef<EditableTextRef, EditableTextProps>(({
     const InputComponent = multiline ? 'textarea' : 'input';
     return (
       <InputComponent
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ref={inputRef as any}
         value={editValue}
         onChange={(e) => setEditValue(e.target.value)}
@@ -139,13 +142,13 @@ export const EditableText = forwardRef<EditableTextRef, EditableTextProps>(({
     );
   }
 
-  const TagComponent = tag as any;
   return (
     <>
-      <TagComponent
-        ref={elementRef}
-        className={`editable-text ${className} ${isHovered ? 'hovered' : ''}`}
-        style={{ 
+      {React.createElement(tag, {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ref: elementRef as any,
+        className: `editable-text ${className} ${isHovered ? 'hovered' : ''}`,
+        style: { 
           ...style, 
           position: 'relative',
           cursor: disableDoubleClick ? 'default' : 'pointer',
@@ -154,15 +157,13 @@ export const EditableText = forwardRef<EditableTextRef, EditableTextProps>(({
           padding: isHovered && !disableDoubleClick ? '2px 4px' : '0',
           backgroundColor: isHovered && !disableDoubleClick ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
           transition: 'all 0.2s ease'
-        }}
-        onDoubleClick={handleDoubleClick}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={() => {
+        },
+        onDoubleClick: handleDoubleClick,
+        onMouseEnter: handleMouseEnter,
+        onMouseLeave: () => {
           setIsHovered(false);
-        }}
-      >
-        {value || placeholder}
-      </TagComponent>
+        }
+      }, value || placeholder)}
       {isHovered && !disableDoubleClick && typeof window !== 'undefined' && createPortal(
         <div 
           className="editable-tooltip"

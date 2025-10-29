@@ -26,7 +26,7 @@ class CMSService {
     this.baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5050';
   }
 
-  async createOrUpdatePageContent(data: PageContentData): Promise<ApiResponse<any>> {
+  async createOrUpdatePageContent(data: PageContentData): Promise<ApiResponse<PageContentData>> {
     try {
       const response = await fetch(`${this.baseUrl}/page/createOrUpdatePageContent`, {
         method: 'POST',
@@ -48,7 +48,7 @@ class CMSService {
     }
   }
 
-  async getPageContent(pageType: PageType): Promise<ApiResponse<any>> {
+  async getPageContent(pageType: PageType): Promise<ApiResponse<PageContentData>> {
     try {
       const response = await fetch(`${this.baseUrl}/page/getPageContent?pageType=${pageType}`, {
         method: 'GET',

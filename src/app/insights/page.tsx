@@ -683,7 +683,7 @@ export default function InsightsPage() {
               }}>
                 <p>No blogs available for this category yet.</p>
                 <p style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-2)' }}>
-                  Click "Add Blog" to create the first blog post.
+                  Click &quot;Add Blog&quot; to create the first blog post.
                 </p>
               </div>
             )}
